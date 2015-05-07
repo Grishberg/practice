@@ -17,14 +17,14 @@
             android:text="news title"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textSize="36dp"/>
+            android:textSize="30dp"/>
 
         <TextView
             android:id="@+id/tvNewsFragmentBody"
             android:text="news body"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="32dp"
+            android:textSize="24dp"
             android:layout_below="@+id/tvNewsFragmentTitle"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
