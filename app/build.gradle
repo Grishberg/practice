@@ -24,4 +24,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'org.jsoup:jsoup:1.8.2'
     compile project(':volley')
+    compile 'com.squareup.picasso:picasso:2.5.2'
 }

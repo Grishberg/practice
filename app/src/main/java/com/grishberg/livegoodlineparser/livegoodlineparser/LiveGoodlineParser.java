@@ -78,14 +78,23 @@ public class LiveGoodlineParser
     // парсинг отдельной статьи
     public static NewsElement getNews(String content)
     {
-        NewsElement result = new NewsElement();
+        NewsElement result = null;
 
         Document doc        = Jsoup.parse(content);
-        //Element container = doc.body().getElementById("container");
-        //Element wr          = container.getElementById("wrapper");
-        //Element cont        = wr.getElementById("content");
-        //Element newsBlock   = cont.getElementsByClass("list-topic").first();
-        //Elements articleBlocks = newsBlock.getElementsByTag("article");
+        try
+        {
+            Element container = doc.body().getElementById("container");
+            Element wr          = container.getElementById("wrapper");
+            Element cont        = wr.getElementById("content");
+            Element newsBlock   = cont.getElementsByClass("topic-content").first();
+            //String articleBody  = newsBlock.text();
+            String articleBody  = newsBlock.html();
+
+            result = new NewsElement("","",articleBody,"","");
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
 
         return result;
     }
