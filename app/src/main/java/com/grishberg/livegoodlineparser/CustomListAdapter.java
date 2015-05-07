@@ -67,8 +67,15 @@ public class CustomListAdapter extends BaseAdapter
         ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());
         ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDate());
         NetworkImageView img = (NetworkImageView) view.findViewById(R.id.thumbnail);
-        img.setImageUrl(p.getImageLink(),imageLoader);
+        if(p.getImageLink().length() > 0)
+        {
+            img.setImageUrl(p.getImageLink(), imageLoader);
+        }
+        else
+        {
+            //TODO: отображать пустую картинку для таких случаев
+            img.setImageUrl("", imageLoader);
+        }
         return view;
     }
-
 }

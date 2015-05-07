@@ -88,7 +88,8 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			public void loadMore(int page, int totalItemsCount)
 			{
 				// загрузить еще данных
-				progressDlg.show();
+				//progressDlg.show();
+
 				getPageContent(page, false);
 			}
 		});
@@ -133,9 +134,8 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			url += String.format("/page%d/",page);
 		}
 
-		RequestQueue queue      = Volley.newRequestQueue(getActivity());
-
 		// отправка запроса на закачку страницы
+		RequestQueue queue      = Volley.newRequestQueue(getActivity());
 		StringRequest getReq    = new StringRequest(Request.Method.GET
 				, url
 				, new Response.Listener<String>()
@@ -145,6 +145,13 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			public void onResponse(String response)
 			{
 				boolean dataChanged = false;
+				if(response == null || response.length() == 0)
+				{
+					// отключаем прогрессбар
+					progressDlg.dismiss();
+					return;
+				}
+
 				// парсим статью
 				List<NewsElement> newElements = LiveGoodlineParser.getNewsPerPage(response);
 				// в зависимости от того, обновляем сверху или снизу, осуществляем нужные действия
@@ -155,8 +162,6 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 					for(int i = newElements.size()-1; i >= 0 ; i--)
 					{
 						NewsElement currentElement = newElements.get(i);
-						int compare     = currentElement.compareTo(elements.get(0));
-						String title    = currentElement.getTitle();
 						if(currentElement.compareTo(elements.get(0)) <= 0)
 						{
 							newElements.remove(i);

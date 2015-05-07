@@ -31,47 +31,55 @@ public class LiveGoodlineParser
         List<NewsElement> elements = new ArrayList<NewsElement>();
         //TODO: спарсить content
 
-        Document doc        = Jsoup.parse(content);
-        Element container = doc.body().getElementById("container");
-        Element wr          = container.getElementById("wrapper");
-        Element cont        = wr.getElementById("content");
-        Element newsBlock   = cont.getElementsByClass("list-topic").first();
-        Elements articleBlocks = newsBlock.getElementsByTag("article");
-        for(Element e: articleBlocks)
+        Document doc            = Jsoup.parse(content);
+        Element container       = doc.body().getElementById("container");
+        Element wr              = container.getElementById("wrapper");
+        Element cont            = wr.getElementById("content");
+        Element newsBlock       = cont.getElementsByClass("list-topic").first();
+        if(newsBlock != null)
         {
-            // цикл по блокам со статьями
-            NewsElement element = null;
-            try
+            Elements articleBlocks  = newsBlock.getElementsByTag("article");
+            for(Element e: articleBlocks)
             {
-                // блок с картинкой
-                Element divPreview  = e.getElementsByClass("preview").first();
-                Element imageLinkElement   = divPreview.getElementsByTag("a").first();
-                String  imageLink   = imageLinkElement.getElementsByTag("img").first().attr("src");
-                //String imageLink    = imageLinkElement.attr("href");
+                // цикл по блокам со статьями
+                NewsElement element = null;
+                try
+                {
+                    String imageLink    = "";
+                    // блок с картинкой
+                    Element divPreview  = e.getElementsByClass("preview").first();
+                    if(divPreview != null)
+                    {
+                        // может не быть картинки
+                        Element imageLinkElement = divPreview.getElementsByTag("a").first();
+                        imageLink = imageLinkElement.getElementsByTag("img").first().attr("src");
+                    }
 
-                // блок с описанием
-                //
-                Element divTopic    = e.getElementsByClass("wraps").first();
-                Element header      = divTopic.getElementsByTag("header").first();
-                Element headerTitle = header.getElementsByClass("topic-title").first();
-                Element title       = headerTitle.getElementsByTag("a").first();
-                String articleUrl  = title.attr("href");
-                String articleTitle  = title.html();
+                    // блок с описанием
+                    //
+                    Element divTopic    = e.getElementsByClass("wraps").first();
+                    Element header      = divTopic.getElementsByTag("header").first();
+                    Element headerTitle = header.getElementsByClass("topic-title").first();
+                    Element title       = headerTitle.getElementsByTag("a").first();
+                    String articleUrl  = title.attr("href");
+                    String articleTitle  = title.html();
 
-                Element timeElement = header.getElementsByTag("time").first();
-                String timeStr      = timeElement.attr("datetime");
+                    Element timeElement = header.getElementsByTag("time").first();
+                    String timeStr      = timeElement.attr("datetime");
 
-                Element articleBodyBlock    = divTopic.getElementsByClass("topic-content").first();
-                String articleBody  = articleBodyBlock.text().replace("Читать дальше","");
+                    Element articleBodyBlock    = divTopic.getElementsByClass("topic-content").first();
+                    String articleBody  = articleBodyBlock.text().replace("Читать дальше","");
 
-                element             = new NewsElement(articleUrl, articleTitle, articleBody, imageLink, timeStr);
-                elements.add(element);
-            }
-            catch (Exception error)
-            {
-                error.printStackTrace();
+                    element             = new NewsElement(articleUrl, articleTitle, articleBody, imageLink, timeStr);
+                    elements.add(element);
+                }
+                catch (Exception error)
+                {
+                    error.printStackTrace();
+                }
             }
         }
+
         return elements;
     }
 
