@@ -35,6 +35,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 {
 	public static final String NEWS_URL_INTENT = "currentNewsUrl";
 	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
+
 	// ссылка на основную страницу
 	private final String        mainUrl             = "http://live.goodline.info/guest";
 	private final int           newsCountPerPage    = 10;

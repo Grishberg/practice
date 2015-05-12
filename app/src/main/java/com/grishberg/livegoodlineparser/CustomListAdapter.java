@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.volley.toolbox.ImageLoader;
@@ -73,8 +74,9 @@ public class CustomListAdapter extends BaseAdapter
         }
         else
         {
-            //TODO: отображать пустую картинку для таких случаев
-            img.setImageUrl("", imageLoader);
+            // отображать пустую картинку для таких случаев
+
+            img.setImageResource(R.drawable.goodlinelogomini);
         }
         return view;
     }
