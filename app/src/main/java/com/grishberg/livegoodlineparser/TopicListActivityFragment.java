@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -162,9 +163,13 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 					for(int i = newElements.size()-1; i >= 0 ; i--)
 					{
 						NewsElement currentElement = newElements.get(i);
-						if(currentElement.compareTo(elements.get(0)) <= 0)
+						//  сравнить новые новости с уже имеющимися в списке
+						if( elements.size() > 0)
 						{
-							newElements.remove(i);
+							if(currentElement.compareTo(elements.get(0)) <= 0)
+							{
+								newElements.remove(i);
+							}
 						}
 					}
 					if(newElements.size() > 0)
@@ -204,6 +209,8 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			public void onErrorResponse(VolleyError error)
 			{
 				System.out.println("Error ["+error+"]");
+
+				Toast.makeText(getActivity(),"Неудачная попытка соединиться с сервером.",Toast.LENGTH_SHORT).show();
 				progressDlg.dismiss();
 			}
 		});
