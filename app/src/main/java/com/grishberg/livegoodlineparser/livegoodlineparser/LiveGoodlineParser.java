@@ -84,9 +84,9 @@ public class LiveGoodlineParser
     }
 
     // парсинг отдельной статьи
-    public static NewsElement getNews(String content)
+    public static String getNews(String content)
     {
-        NewsElement result = null;
+        String result = null;
 
         Document doc        = Jsoup.parse(content);
         try
@@ -98,7 +98,7 @@ public class LiveGoodlineParser
             //String articleBody  = newsBlock.text();
             String articleBody  = newsBlock.html().replace("<img ","<img align=\"center\" ");
 
-            result = new NewsElement("","",articleBody,"","");
+            result = articleBody;
         } catch (Exception e)
         {
             e.printStackTrace();

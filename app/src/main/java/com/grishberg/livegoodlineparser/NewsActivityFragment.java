@@ -32,6 +32,7 @@ import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -46,7 +47,10 @@ public class NewsActivityFragment extends Fragment
 	private TextView tvTitle;
 	private TextView tvNewsBody;
 	private ProgressDialog progressDlg;
-	private NewsElement		currentNewsElement;
+
+	// загрузчик новостей
+	private LiveGoodlineInfoDownloader downloader;
+
 	public NewsActivityFragment()
 	{
 	}
@@ -63,6 +67,9 @@ public class NewsActivityFragment extends Fragment
 		Intent intent		= getActivity().getIntent();
 		String newsUrl		= intent.getStringExtra(TopicListActivityFragment.NEWS_URL_INTENT);
 		String newsTitle	= intent.getStringExtra(TopicListActivityFragment.NEWS_TITLE_INTENT);
+		Long lDate			= intent.getLongExtra(TopicListActivityFragment.NEWS_DATE_INTENT,0);
+
+		Date date			= new Date(lDate);
 
 		// изменение title
 		NewsActivity parent	= (NewsActivity)getActivity();
@@ -77,61 +84,58 @@ public class NewsActivityFragment extends Fragment
 		progressDlg.setMessage("Идет загрузка новости...");
 		progressDlg.show();
 
-		getPageContent(newsUrl);
+		downloader = new LiveGoodlineInfoDownloader(getActivity());
+
+		getPageContent(newsUrl,date);
 		return view;
 	}
 
 	//------------------- процедура фоновой загрузки страницы -------------------------
-	private void getPageContent(String url)
+	private void getPageContent(String url,Date date)
 	{
-		RequestQueue queue      = Volley.newRequestQueue(getActivity());
+		downloader.getNewsPage(getActivity(), url, date, new IGetNewsResponseListener()
+				{
+					@Override
+					public void onResponseGetNewsPage(String newsBody)
+					{
+						doAfterNewsBodyReceived(newsBody);
+					}
+				},
+				new Response.ErrorListener()
+				{
+					@Override
+					public void onErrorResponse(VolleyError error)
+					{
+						System.out.println("Error [" + error + "]");
+						progressDlg.dismiss();
+					}
+				});
 
-		// отправка запроса на закачку страницы
-		StringRequest getReq    = new StringRequest(Request.Method.GET
-				, url
-				, new Response.Listener<String>()
-		{
-			// событие возникает при успешном чтении
-			@Override
-			public void onResponse(String response)
-			{
-				// парсим статью
-				currentNewsElement = LiveGoodlineParser.getNews(response);
-
-				// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
-				Spanned spanned = Html.fromHtml(currentNewsElement.getBody(),
-						new Html.ImageGetter()
-						{
-							@Override
-							public Drawable getDrawable(String source) // вызывается для загрузки изображений
-							{
-								LevelListDrawable d = new LevelListDrawable();
-								Drawable empty = getResources().getDrawable(R.drawable.abc_btn_check_material);;
-								d.addLevel(0, 0, empty);
-								d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
-								new ImageGetterAsyncTask(getActivity(), source, d).execute(tvNewsBody);
-
-								return d;
-							}
-						}, null);
-				tvNewsBody.setText(spanned);
-
-				// отключаем прогрессбар
-				progressDlg.dismiss();
-			}
-		}, new Response.ErrorListener()
-		{
-			// возникла ошибка
-			@Override
-			public void onErrorResponse(VolleyError error)
-			{
-				System.out.println("Error ["+error+"]");
-				progressDlg.dismiss();
-			}
-		});
-		queue.add(getReq);
 	}
 
+	private void doAfterNewsBodyReceived(String newsBody)
+	{
+		// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
+		Spanned spanned = Html.fromHtml(newsBody,
+				new Html.ImageGetter()
+				{
+					@Override
+					public Drawable getDrawable(String source) // вызывается для загрузки изображений
+					{
+						LevelListDrawable d = new LevelListDrawable();
+						Drawable empty = getResources().getDrawable(R.drawable.abc_btn_check_material);;
+						d.addLevel(0, 0, empty);
+						d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
+						new ImageGetterAsyncTask(getActivity(), source, d).execute(tvNewsBody);
+
+						return d;
+					}
+				}, null);
+		tvNewsBody.setText(spanned);
+
+		// отключаем прогрессбар
+		progressDlg.dismiss();
+	}
 	//------------------------------
 	class ImageGetterAsyncTask extends AsyncTask<TextView, Void, Bitmap>
 	{

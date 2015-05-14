@@ -66,7 +66,7 @@ public class CustomListAdapter extends BaseAdapter
 
         // заполняем View
         ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());
-        ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDate());
+        ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDateStr());
         NetworkImageView img = (NetworkImageView) view.findViewById(R.id.thumbnail);
         if(p.getImageLink().length() > 0)
         {
@@ -75,7 +75,6 @@ public class CustomListAdapter extends BaseAdapter
         else
         {
             // отображать пустую картинку для таких случаев
-
             img.setImageResource(R.drawable.goodlinelogomini);
         }
         return view;

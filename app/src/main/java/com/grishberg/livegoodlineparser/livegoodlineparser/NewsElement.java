@@ -22,12 +22,14 @@ public class NewsElement implements Comparable
     {
 
     }
+
     public  NewsElement(String url, String title, String body, String imageLink, String dateStr)
     {
         this.url        = url;
         this.title      = title;
         this.body       = body;
         this.imageLink  = imageLink;
+        this.date       = new Date(1,1,1);
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
         DateFormat timeFormat = new SimpleDateFormat(" HH:mm:ss");
@@ -66,6 +68,51 @@ public class NewsElement implements Comparable
         this.dateStr    = convertedDate;
     }
 
+    public  NewsElement(String url
+            , String    title
+            , String    previewImageUrl
+            , Long      lDate)
+    {
+        this.url        = url;
+        this.title      = title;
+        this.body       = "";
+        this.imageLink  = previewImageUrl;
+        this.date       = new Date(lDate);
+
+        DateFormat dateFormat       = new SimpleDateFormat("dd.MM.yyyy");
+        DateFormat timeFormat       = new SimpleDateFormat(" HH:mm:ss");
+        String convertedDate        = "";
+
+        try
+        {
+            // формирование даты
+            String dayPrefix    = "";
+            Date currentDate    = new Date();
+            if(date.getDate()   == currentDate.getDate() &&
+                    date.getMonth() == currentDate.getMonth() &&
+                    date.getYear()  == currentDate.getYear())
+            {
+                dayPrefix   = "Сегодня";
+            } else if(date.getDate()    == currentDate.getDate()-1 &&
+                    date.getMonth()     == currentDate.getMonth() &&
+                    date.getYear()      == currentDate.getYear())
+            {
+                dayPrefix   = "Вчера";
+            } else
+            {
+                dayPrefix   = dateFormat.format(date);
+            }
+            // формирование времени
+            convertedDate   = dayPrefix + timeFormat.format(date);
+
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        this.dateStr    = convertedDate;
+    }
+
     @Override
     public int compareTo(Object obj)
     {
@@ -73,10 +120,15 @@ public class NewsElement implements Comparable
         if (this.date == null || entry.date == null) return -1;
         return this.date.compareTo(entry.date);
     }
-
+    public int compareToDate(Date dt)
+    {
+        if (this.date == null || dt == null) return -1;
+        return this.date.compareTo(dt);
+    }
     public String getUrl(){return url;}
     public String getTitle(){return  title;}
     public String getBody(){return  body;}
     public String getImageLink(){return imageLink;}
-    public String getDate(){return dateStr;}
+    public String getDateStr(){return dateStr;}
+    public Date getDate(){return date;}
 }

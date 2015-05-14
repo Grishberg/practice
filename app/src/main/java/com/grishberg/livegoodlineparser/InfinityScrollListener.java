@@ -7,6 +7,7 @@ import android.widget.AbsListView;
  */
 public abstract class InfinityScrollListener implements AbsListView.OnScrollListener
 {
+    private int itemsOffset     = 5;    // за сколько значений до конца списка начать  отображать
     private int bufferItemCount = 10;
     private int currentPage = 0;
     private int itemCount = 0;
@@ -45,7 +46,7 @@ public abstract class InfinityScrollListener implements AbsListView.OnScrollList
             currentPage++;
         }
 
-        if (!isLoading && (totalItemCount - visibleItemCount)<=(firstVisibleItem + bufferItemCount))
+        if (!isLoading && (totalItemCount - visibleItemCount) <= (firstVisibleItem + bufferItemCount + itemsOffset))
         {
             loadMore(currentPage + 1, totalItemCount);
             isLoading = true;

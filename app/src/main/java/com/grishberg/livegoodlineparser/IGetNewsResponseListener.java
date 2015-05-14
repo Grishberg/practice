@@ -8,5 +8,5 @@ import java.util.List;
  */
 public interface IGetNewsResponseListener
 {
-	public void onResponseGetNewsPage(NewsElement newsElement);
+	public void onResponseGetNewsPage(String newsBody);
 }
