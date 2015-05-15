@@ -47,8 +47,8 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	public static final String COMMAND_OPEN_NEWS_FROM_SERVICE	= "commandOpenNewsFromCheckNewsService";
 
 
-	public static final String NEWS_URL_INTENT = "currentNewsUrl";
-	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
+	public static final String NEWS_URL_INTENT		= "currentNewsUrl";
+	public static final String NEWS_TITLE_INTENT 	= "currentNewsTitle";
 	public static final String NEWS_DATE_INTENT		= "currentNewsDate";
 	public static final int UPDATE_NEWS_DURATION	= 30*60*1000;
 	public static final int VOLLEY_SYNC_TIMEOUT		= 30;
@@ -57,9 +57,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	private final int           newsCountPerPage    = 10;
 	private ProgressDialog progressDlg;
 
-	// для загрузки изображений
-	private RequestQueue requestQueue;
-	private ImageLoader imageLoader;
+
 	private ListView lvNews;
 	private SwipeRefreshLayout  swipeRefreshLayout;
 	private CustomListAdapter   adapter;
@@ -81,21 +79,6 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	{
 		View view	= inflater.inflate(R.layout.fragment_topic_list, container, false);
 		setHasOptionsMenu(true);
-
-		// для фоновой загрузки изображений через Volley
-		requestQueue = Volley.newRequestQueue(view.getContext());
-		imageLoader = new ImageLoader(requestQueue, new ImageLoader.ImageCache()
-		{
-			private final LruCache<String, Bitmap> mCache = new LruCache<String, Bitmap>(newsCountPerPage);
-			public void putBitmap(String url, Bitmap bitmap)
-			{
-				mCache.put(url, bitmap);
-			}
-			public Bitmap getBitmap(String url)
-			{
-				return mCache.get(url);
-			}
-		});
 
 		downloader = new LiveGoodlineInfoDownloader(getActivity());
 
@@ -122,7 +105,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 		//TODO: проверить, не восстановлен ли вид после поворота
 
-		adapter     = new CustomListAdapter(view.getContext(), imageLoader,elements);
+		adapter     = new CustomListAdapter(view.getContext(),elements);
 		lvNews.setAdapter(adapter);
 
 
@@ -229,9 +212,10 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 				, new IGetTopicListResponseListener()
 				{
 					@Override
-					public void onResponseGetTopicList(List<NewsElement> topicList)
+					public void onResponseGetTopicList(List<NewsElement> topicList, boolean fromCache)
 					{
 						downloadingPage = false;
+						progressDlg.dismiss();
 						doAfterTopicListReceived(topicList, insertToTop, page);
 					}
 				}
@@ -253,8 +237,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	//TODO: нужно синхронизировать , може Synchronized?
 	private /*synchronized*/ void doAfterTopicListReceived(List<NewsElement> topicList, boolean insertToTop, int page)
 	{
-		// отключаем прогрессбар
-		progressDlg.dismiss();
+
 		boolean dataChanged = false;
 		if(topicList == null || topicList.size() == 0)
 		{
@@ -335,8 +318,15 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	public void onRefresh()
 	{
 		// начинаем показывать прогресс
-		swipeRefreshLayout.setRefreshing(true);
-		getPageContent(1, true);
+		if(downloadingPage == false)
+		{
+			swipeRefreshLayout.setRefreshing(true);
+			getPageContent(1, true);
+		}
+		else
+		{
+			swipeRefreshLayout.setRefreshing(false);
+		}
 	}
 
 	//----- обработка фоновой загрузки отдельной новости

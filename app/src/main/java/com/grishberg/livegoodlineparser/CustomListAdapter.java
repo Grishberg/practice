@@ -26,13 +26,11 @@ public class CustomListAdapter extends BaseAdapter
     Context context;
     private List<NewsElement>   items;
     private LayoutInflater      inflater;
-    private ImageLoader         imageLoader;
     private Picasso             mPicasso;
-    public CustomListAdapter(Context context,ImageLoader imageLoader,List<NewsElement> elements)
+    public CustomListAdapter(Context context,List<NewsElement> elements)
     {
         this.items          = elements;
         this.context        = context;
-        this.imageLoader    = imageLoader;
         inflater            = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mPicasso            = Picasso.with(context.getApplicationContext());
     }

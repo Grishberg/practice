@@ -9,5 +9,5 @@ import java.util.List;
  */
 public interface IGetTopicListResponseListener
 {
-	public void onResponseGetTopicList(List<NewsElement> topicList);
+	public void onResponseGetTopicList(List<NewsElement> topicList, boolean fromCache);
 }

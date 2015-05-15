@@ -154,7 +154,7 @@ public class CheckNewsUpdatesService extends IntentService
 					.setTicker("Обновления.")
 					.setWhen(System.currentTimeMillis())
 					.setAutoCancel(true)
-					.setSmallIcon(R.drawable.goodlinelogomini)
+					.setSmallIcon(R.drawable.notifyicon)
 					.setDefaults(Notification.DEFAULT_SOUND)
 					.build();
 		}
@@ -166,7 +166,7 @@ public class CheckNewsUpdatesService extends IntentService
 					.setTicker("Обновления.")
 					.setWhen(System.currentTimeMillis())
 					.setAutoCancel(true)
-					.setSmallIcon(R.drawable.goodlinelogomini)
+					.setSmallIcon(R.drawable.notifyicon)
 					.build();
 		}
 

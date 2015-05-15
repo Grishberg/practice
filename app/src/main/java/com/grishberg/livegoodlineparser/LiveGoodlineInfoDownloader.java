@@ -81,6 +81,7 @@ public class LiveGoodlineInfoDownloader
 		{
 			@Override
 			public boolean getInsertToTop(){ return insertToTop; }
+
 			@Override
 			public int getPage()
 			{
@@ -88,17 +89,10 @@ public class LiveGoodlineInfoDownloader
 			}
 
 			@Override
-			public void onDone(List<NewsElement> result)
+			public void onDone(List<NewsElement> result, boolean fromCache)
 			{
-				// если не первая страница, то отдать результат
-				{
-					// отправка запроса на закачку страницы
-					if(result!= null && result.size() > 0)
-					{
-						// вернуть хоть что то из кэша
-						listener.onResponseGetTopicList(result);
-					}
-				}
+				// вернуть результат
+				listener.onResponseGetTopicList(result,fromCache);
 			}
 
 			@Override
@@ -130,12 +124,12 @@ public class LiveGoodlineInfoDownloader
 			}
 
 			@Override
-			public void onDone(String body)
+			public void onDone(String body, boolean fromCache)
 			{
 				if (body != null)
 				{
 					// в кэше есть новость - вернуть данные
-					listener.onResponseGetNewsPage(body);
+					listener.onResponseGetNewsPage(body, fromCache);
 				}
 			}
 		});
@@ -409,7 +403,7 @@ public class LiveGoodlineInfoDownloader
 	interface GetTopicTaskParamers
 	{
 		public int 		getPage();
-		public void 	onDone(List<NewsElement> result);
+		public void 	onDone(List<NewsElement> result, boolean fromCache);
 		public Date 	getDate();
 		public boolean	getInsertToTop();
 	}
@@ -476,11 +470,11 @@ public class LiveGoodlineInfoDownloader
 		{
 			// отобразить данные из кэша
 			List<NewsElement> params	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(params);
+			inputParam.onDone(params, true);
 		}
 		protected void onPostExecute(List<NewsElement> result)
 		{
-			inputParam.onDone(result);
+			inputParam.onDone(result, false);
 		}
 	}
 
@@ -515,7 +509,7 @@ public class LiveGoodlineInfoDownloader
 	interface GetNewsBodyTaskParameters
 	{
 		public Date getDate();
-		public void onDone(String body);
+		public void onDone(String body, boolean fromCache);
 		public String getUrl();
 	}
 
@@ -581,13 +575,13 @@ public class LiveGoodlineInfoDownloader
 		protected void onProgressUpdate(String... progress)
 		{
 			String result	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(result);
+			inputParam.onDone(result, true);
 
 		}
 		// вывести итоговый вариант
 		protected void onPostExecute(String result)
 		{
-			inputParam.onDone(result);
+			inputParam.onDone(result, false);
 		}
 	}
 

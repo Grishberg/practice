@@ -96,9 +96,9 @@ public class NewsActivityFragment extends Fragment
 		downloader.getNewsPage(getActivity(), url, date, new IGetNewsResponseListener()
 				{
 					@Override
-					public void onResponseGetNewsPage(String newsBody)
+					public void onResponseGetNewsPage(String newsBody, boolean fromCache)
 					{
-						doAfterNewsBodyReceived(newsBody);
+						doAfterNewsBodyReceived(newsBody,fromCache);
 					}
 				},
 				new Response.ErrorListener()
@@ -113,12 +113,13 @@ public class NewsActivityFragment extends Fragment
 
 	}
 
-	private void doAfterNewsBodyReceived(String newsBody)
+	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache)
 	{
 		// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
-		hideProgress();
-		//TODO: передавать статус полная ли это статья или описание
-		//если описание - то не скрывать прогресс
+		if(fromCache == false)
+		{
+			hideProgress();
+		}
 		if(newsBody == null)
 		{
 			return;
