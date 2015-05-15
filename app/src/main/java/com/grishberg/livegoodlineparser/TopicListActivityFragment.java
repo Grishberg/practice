@@ -50,7 +50,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	public static final String NEWS_URL_INTENT = "currentNewsUrl";
 	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
 	public static final String NEWS_DATE_INTENT		= "currentNewsDate";
-	public static final int UPDATE_NEWS_DURATION	= 60*1000;
+	public static final int UPDATE_NEWS_DURATION	= 30*60*1000;
 	public static final int VOLLEY_SYNC_TIMEOUT		= 30;
 	// ссылка на основную страницу
 
