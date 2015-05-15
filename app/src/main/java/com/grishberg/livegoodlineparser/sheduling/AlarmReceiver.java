@@ -7,8 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 
-import com.grishberg.livegoodlineparser.CheckNewsUpdatesService;
-
 public class AlarmReceiver extends BroadcastReceiver
 {
 	public AlarmReceiver()

@@ -1,7 +1,6 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.adapters;
 
 import android.content.Context;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,12 +8,9 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.NetworkImageView;
-import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
 import com.squareup.picasso.Picasso;
-
-import org.jsoup.nodes.Element;
 
 import java.util.List;
 

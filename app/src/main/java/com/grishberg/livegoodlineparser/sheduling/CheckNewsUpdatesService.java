@@ -1,10 +1,9 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.sheduling;
 
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
@@ -13,17 +12,18 @@ import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.LiveGoodlineInfoDownloader;
+import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.TopicListActivity;
+import com.grishberg.livegoodlineparser.TopicListActivityFragment;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

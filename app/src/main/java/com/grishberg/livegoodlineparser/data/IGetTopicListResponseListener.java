@@ -1,6 +1,6 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.data;
 
-import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
 
 import java.util.List;
 

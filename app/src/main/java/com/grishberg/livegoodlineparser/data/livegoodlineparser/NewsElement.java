@@ -1,6 +1,4 @@
-package com.grishberg.livegoodlineparser.livegoodlineparser;
-
-import com.android.volley.toolbox.StringRequest;
+package com.grishberg.livegoodlineparser.data.livegoodlineparser;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

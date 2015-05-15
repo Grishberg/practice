@@ -27,7 +27,7 @@
         </activity>
 
         <service
-            android:name=".CheckNewsUpdatesService"
+            android:name=".sheduling.CheckNewsUpdatesService"
             android:enabled="true"
             android:exported="true" >
         </service>

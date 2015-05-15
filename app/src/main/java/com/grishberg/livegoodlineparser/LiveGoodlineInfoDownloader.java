@@ -7,30 +7,25 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.ImageView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.IClearDbListener;
+import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
+import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
 
-import java.sql.SQLClientInfoException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import android.util.Log;
 
 /**
  * Created by G on 12.05.15.

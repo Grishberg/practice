@@ -1,16 +1,11 @@
 package com.grishberg.livegoodlineparser;
 
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
-import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -21,15 +16,12 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.adapters.CustomListAdapter;
+import com.grishberg.livegoodlineparser.data.IClearDbListener;
+import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
+import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
 import com.grishberg.livegoodlineparser.sheduling.AlarmReceiver;
 
 import java.util.ArrayList;
@@ -60,7 +52,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 	private ListView lvNews;
 	private SwipeRefreshLayout  swipeRefreshLayout;
-	private CustomListAdapter   adapter;
+	private CustomListAdapter adapter;
 	private List<NewsElement> elements;
 
 	// загрузчик новостей

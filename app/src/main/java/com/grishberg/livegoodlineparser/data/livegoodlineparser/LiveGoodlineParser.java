@@ -1,6 +1,4 @@
-package com.grishberg.livegoodlineparser.livegoodlineparser;
-
-import android.provider.DocumentsContract;
+package com.grishberg.livegoodlineparser.data.livegoodlineparser;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,7 +7,6 @@ import org.jsoup.select.Elements;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by g on 06.05.15.

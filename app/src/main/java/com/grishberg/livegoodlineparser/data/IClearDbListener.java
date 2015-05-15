@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.data;
 
 /**
  * Created by G on 14.05.15.
