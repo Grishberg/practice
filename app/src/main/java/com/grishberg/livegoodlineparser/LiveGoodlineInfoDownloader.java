@@ -93,7 +93,7 @@ public class LiveGoodlineInfoDownloader
 				// если не первая страница, то отдать результат
 				{
 					// отправка запроса на закачку страницы
-					if(result.size() > 0)
+					if(result!= null && result.size() > 0)
 					{
 						// вернуть хоть что то из кэша
 						listener.onResponseGetTopicList(result);
@@ -270,7 +270,7 @@ public class LiveGoodlineInfoDownloader
 				res.moveToNext();
 			}
 
-			dbHelper.close();
+			db.close();
 			return  news;
 		}
 
@@ -345,7 +345,7 @@ public class LiveGoodlineInfoDownloader
 			contentValues.put(NEWS_COLUMN_ISDESCRIPTION, 0);
 
 			int status	= db.update(NEWS_TABLE_NAME, contentValues, "date = ? ", new String[] { Long.toString(date.getTime()) } );
-
+			db.close();
 			return true;
 		}
 
@@ -355,7 +355,8 @@ public class LiveGoodlineInfoDownloader
 			SQLiteDatabase db = this.getWritableDatabase();
 			ContentValues contentValues = new ContentValues();
 			contentValues.put(IMAGES_COLUMN_PATH,	path);
-			db.update(IMAGES_TABLE_NAME, contentValues, "url = ? ", new String[] { url } );
+			db.update(IMAGES_TABLE_NAME, contentValues, "url = ? ", new String[]{url});
+			db.close();
 			return true;
 		}
 
@@ -377,7 +378,7 @@ public class LiveGoodlineInfoDownloader
 			{
 				rs.close();
 			}
-
+			db.close();
 			return result;
 		}
 
@@ -399,7 +400,7 @@ public class LiveGoodlineInfoDownloader
 			{
 				rs.close();
 			}
-
+			db.close();
 			return result;
 		}
 	}
@@ -454,7 +455,7 @@ public class LiveGoodlineInfoDownloader
 
             try
 			{
-                String response = futureRequest.get(TopicListActivityFragment.UPDATE_NEWS_DURATION, TimeUnit.SECONDS);
+                String response = futureRequest.get(TopicListActivityFragment.VOLLEY_SYNC_TIMEOUT, TimeUnit.SECONDS);
 				topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
 				// сохранить кэш в базу
 				dbHelper.storeTopicList(topicListFromWeb);

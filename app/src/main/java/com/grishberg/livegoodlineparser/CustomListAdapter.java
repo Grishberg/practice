@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.grishberg.livegoodlineparser.livegoodlineparser.NewsElement;
+import com.squareup.picasso.Picasso;
 
 import org.jsoup.nodes.Element;
 
@@ -22,16 +23,18 @@ import java.util.List;
  */
 public class CustomListAdapter extends BaseAdapter
 {
-    Context ctx;
+    Context context;
     private List<NewsElement>   items;
     private LayoutInflater      inflater;
     private ImageLoader         imageLoader;
-    public CustomListAdapter(Context ctx,ImageLoader imageLoader,List<NewsElement> elements)
+    private Picasso             mPicasso;
+    public CustomListAdapter(Context context,ImageLoader imageLoader,List<NewsElement> elements)
     {
         this.items          = elements;
-        this.ctx            = ctx;
+        this.context        = context;
         this.imageLoader    = imageLoader;
-        inflater            = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        inflater            = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mPicasso            = Picasso.with(context.getApplicationContext());
     }
     @Override
     public int getCount()
@@ -67,10 +70,11 @@ public class CustomListAdapter extends BaseAdapter
         // заполняем View
         ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());
         ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDateStr());
-        NetworkImageView img = (NetworkImageView) view.findViewById(R.id.thumbnail);
+        ImageView img = (ImageView) view.findViewById(R.id.thumbnail);
+
         if(p.getImageLink().length() > 0)
         {
-            img.setImageUrl(p.getImageLink(), imageLoader);
+            mPicasso.load(p.getImageLink()).into(img);
         }
         else
         {

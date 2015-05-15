@@ -116,6 +116,13 @@ public class NewsActivityFragment extends Fragment
 	private void doAfterNewsBodyReceived(String newsBody)
 	{
 		// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
+		hideProgress();
+		//TODO: передавать статус полная ли это статья или описание
+		//если описание - то не скрывать прогресс
+		if(newsBody == null)
+		{
+			return;
+		}
 		Spanned spanned = Html.fromHtml(newsBody,
 				new Html.ImageGetter()
 				{
@@ -133,8 +140,15 @@ public class NewsActivityFragment extends Fragment
 				}, null);
 		tvNewsBody.setText(spanned);
 
+	}
+	private void hideProgress()
+	{
 		// отключаем прогрессбар
 		progressDlg.dismiss();
+	}
+	private void showProgress()
+	{
+		progressDlg.show();
 	}
 	//------------------------------
 	class ImageGetterAsyncTask extends AsyncTask<TextView, Void, Bitmap>
