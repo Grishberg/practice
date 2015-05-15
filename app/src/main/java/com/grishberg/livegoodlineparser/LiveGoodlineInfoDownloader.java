@@ -148,6 +148,12 @@ public class LiveGoodlineInfoDownloader
 		clearDbTask.execute(listener);
 	}
 
+	// сохранить список новостей в кэш
+	public void addNewsToCache(List<NewsElement> topicList)
+	{
+		dbHelper.storeTopicList(topicList);
+	}
+
 
 	class CachedNewsBodyContainer
 	{
@@ -448,7 +454,7 @@ public class LiveGoodlineInfoDownloader
 
             try
 			{
-                String response = futureRequest.get(10, TimeUnit.SECONDS);
+                String response = futureRequest.get(TopicListActivityFragment.UPDATE_NEWS_DURATION, TimeUnit.SECONDS);
 				topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
 				// сохранить кэш в базу
 				dbHelper.storeTopicList(topicListFromWeb);
@@ -531,6 +537,7 @@ public class LiveGoodlineInfoDownloader
 					cachedNewsBody.getBody() != null &&
 					cachedNewsBody.getBody().length() >0)
 			{
+				Log.d(LOG_TAG,"Данные из кэша");
 				if (cachedNewsBody.getDescriptionStatus() == true)
 				{
 					// в кэше превью,
@@ -552,7 +559,7 @@ public class LiveGoodlineInfoDownloader
 
 			try
 			{
-				String response = futureRequest.get(10, TimeUnit.SECONDS);
+				String response = futureRequest.get(TopicListActivityFragment.VOLLEY_SYNC_TIMEOUT, TimeUnit.SECONDS);
 				// спарсить полученную строку
 				webNewsBody = LiveGoodlineParser.getNews(response);
 				//сохранить в кэше
@@ -566,25 +573,19 @@ public class LiveGoodlineInfoDownloader
 				e.printStackTrace();
 			}
 
-
+			Log.d(LOG_TAG,"Данные из сети");
 			return webNewsBody;
 		}
 		// вывести промежуточный вариант из кэша
 		protected void onProgressUpdate(String... progress)
 		{
 			String result	= progress.length > 0 ? progress[0] : null;
-
-			Log.d(LOG_TAG,"Данные из кэша");
 			inputParam.onDone(result);
 
 		}
 		// вывести итоговый вариант
 		protected void onPostExecute(String result)
 		{
-			if(result != null && result.length() > 0)
-			{
-				Log.d(LOG_TAG, "Данные из сети");
-			}
 			inputParam.onDone(result);
 		}
 	}

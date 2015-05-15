@@ -158,7 +158,8 @@ public class NewsActivityFragment extends Fragment
 			try
 			{
 				return Picasso.with(context).load(source).get();
-			} catch (Exception e) {
+			} catch (Exception e)
+			{
 				return null;
 			}
 		}
@@ -166,7 +167,8 @@ public class NewsActivityFragment extends Fragment
 		@Override
 		protected void onPostExecute(final Bitmap bitmap)
 		{
-			try {
+			try
+			{
 				Drawable d = new BitmapDrawable(getResources(), bitmap);
 				Point size = new Point();
 				getActivity().getWindowManager().getDefaultDisplay().getSize(size);
@@ -174,7 +176,9 @@ public class NewsActivityFragment extends Fragment
 				int multiplier = size.x / bitmap.getWidth();
 				levelListDrawable.addLevel(1, 1, d);
 				// Set bounds width  and height according to the bitmap resized size
+				//levelListDrawable.setBounds(0, 0, bitmap.getWidth() * multiplier, bitmap.getHeight() * multiplier);
 				levelListDrawable.setBounds(0, 0, bitmap.getWidth() * multiplier, bitmap.getHeight() * multiplier);
+
 				levelListDrawable.setLevel(1);
 				t.setText(t.getText()); // invalidate() doesn't work correctly...
 			} catch (Exception e) { /* Like a null bitmap, etc. */ }

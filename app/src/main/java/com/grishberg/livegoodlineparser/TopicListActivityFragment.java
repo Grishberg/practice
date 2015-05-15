@@ -1,7 +1,10 @@
 package com.grishberg.livegoodlineparser;
 
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -40,9 +43,15 @@ import java.util.List;
 public class TopicListActivityFragment extends Fragment  implements SwipeRefreshLayout.OnRefreshListener
 {
 	static final String LOG_TAG = "LiveGL.TL";
+	public static final String COMMAND_UPDATE_FROM_SERVICE		= "commandUpdateFromCheckNewsService";
+	public static final String COMMAND_OPEN_NEWS_FROM_SERVICE	= "commandOpenNewsFromCheckNewsService";
+
+
 	public static final String NEWS_URL_INTENT = "currentNewsUrl";
 	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
 	public static final String NEWS_DATE_INTENT		= "currentNewsDate";
+	public static final int UPDATE_NEWS_DURATION	= 60*1000;
+	public static final int VOLLEY_SYNC_TIMEOUT		= 30;
 	// ссылка на основную страницу
 
 	private final int           newsCountPerPage    = 10;
@@ -59,6 +68,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	// загрузчик новостей
 	private LiveGoodlineInfoDownloader downloader;
 	private AlarmReceiver	alarmReceiver;
+	private boolean			downloadingPage = false;
 
 
 	public TopicListActivityFragment()
@@ -124,7 +134,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 									int position, long id)
 			{
 				NewsElement currentNews = (NewsElement) adapter.getItem(position);
-				OnLvClicked(currentNews);
+				startDetailPage(currentNews.getDate(), currentNews.getUrl(), currentNews.getTitle());
 			}
 		});
 
@@ -132,7 +142,6 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 		progressDlg = new ProgressDialog(getActivity());
 		progressDlg.setTitle("Ожидание");
 		progressDlg.setMessage("Идет обновление новостей...");
-		progressDlg.show();
 
 		alarmReceiver	= new AlarmReceiver();
 
@@ -141,9 +150,41 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 		return view;
 	}
 
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+
+		// проверить, не было ли команды от Notification
+		Intent intent = getActivity().getIntent();
+		String action = intent.getAction();
+		if( action != null)
+		{
+			if( action.equals(TopicListActivityFragment.COMMAND_UPDATE_FROM_SERVICE))
+			{
+				// обновить список новостей
+				// запустить обновление списка
+				getPageContent(1, true);
+			}
+			if( action.equals(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE))
+			{
+				// запустить обновление списка
+				getPageContent(1, true);
+
+				// открыть нужную новость
+				String url		= intent.getStringExtra(TopicListActivityFragment.NEWS_URL_INTENT);
+				Date date		= new Date( intent.getLongExtra(TopicListActivityFragment.NEWS_DATE_INTENT, 0));
+				String title = intent.getStringExtra(TopicListActivityFragment.NEWS_TITLE_INTENT);
+				startDetailPage(date,url,title);
+			}
+			Log.d(LOG_TAG," onResume, action = "+action);
+		}
+
+	}
+
 	public void onStartAlarm()
 	{
-		alarmReceiver.startTask(getActivity(),60*1000);
+		alarmReceiver.startTask(getActivity(), TopicListActivityFragment.UPDATE_NEWS_DURATION);
 
 	}
 
@@ -153,6 +194,167 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 	}
 
+	//------------------- процедура фоновой загрузки страницы -------------------------
+	private void getPageContent(final int page,final boolean insertToTop)
+	{
+		// не запускать обновление страницы, если уже идет загрузка.
+		if (downloadingPage) return;
+		downloadingPage	= true;
+		Log.d(LOG_TAG, "on get page, page = "+page+", insertToTop = "+insertToTop);
+
+		// если обновление новостей - отобразить прогресс
+		if (insertToTop)
+		{
+			progressDlg.show();
+		}
+		// время последнего элемента
+		Date lastTopicListDate = null;
+		if(insertToTop)
+		{
+			if(this.elements.size() > 0)
+			{
+				lastTopicListDate = elements.get(0).getDate();
+			}
+		}
+		else
+		{
+			if(this.elements.size() > 0)
+			{
+				lastTopicListDate = elements.get(elements.size()-1).getDate();
+			}
+		}
+		// запрос на загрузку страницы
+		downloader.getTopicList(getActivity()
+				, page, lastTopicListDate, insertToTop
+				, new IGetTopicListResponseListener()
+				{
+					@Override
+					public void onResponseGetTopicList(List<NewsElement> topicList)
+					{
+						downloadingPage = false;
+						doAfterTopicListReceived(topicList, insertToTop, page);
+					}
+				}
+				, new Response.ErrorListener()
+				{
+					@Override
+					public void onErrorResponse(VolleyError error)
+					{
+						Log.d(LOG_TAG, " on received TL from volley Error [" + error + "]");
+						downloadingPage = false;
+						System.out.println("Error [" + error + "]");
+						Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
+						progressDlg.dismiss();
+					}
+				}
+		);
+	}
+
+	//TODO: нужно синхронизировать , може Synchronized?
+	private /*synchronized*/ void doAfterTopicListReceived(List<NewsElement> topicList, boolean insertToTop, int page)
+	{
+		// отключаем прогрессбар
+		progressDlg.dismiss();
+		boolean dataChanged = false;
+		if(topicList == null || topicList.size() == 0)
+		{
+			return;
+		}
+		if (insertToTop)
+		{
+			// pull to refresh - добавление сверху списка
+			for(int i = topicList.size()-1; i >= 0 ; i--)
+			{
+				NewsElement currentElement = topicList.get(i);
+				//  сравнить новые новости с уже имеющимися в списке
+				if( elements.size() > 0)
+				{
+					// если данная новость по времени позже самой свежей - удалить из списка
+					if(currentElement.compareTo(elements.get(0)) <= 0)
+					{
+						topicList.remove(i);
+					}
+				}
+			}
+			// если в списке остались элементы, то добавить в основной список новостей
+			if(topicList.size() > 0)
+			{
+				elements.addAll(0,topicList);
+				dataChanged = true;
+			}
+			swipeRefreshLayout.setRefreshing(false);
+		}
+		else
+		{
+			// добавление в конец списка новостей
+			if(topicList.size() > 0)
+			{
+				//---------- для теста pull to refresh--------
+				if(page == 1)
+				{
+					//topicList.remove(0);
+				}
+				//--------------------------------------------
+				// нужно проверить, есть ли такие новости уже в списке, если есть - заменить
+
+				for(int i = topicList.size() -1; i >=0  ; i--)
+				{
+					NewsElement currentNews	= topicList.get(i);
+					for(NewsElement currentLvElement: elements)
+					{
+						if(currentLvElement.compareTo(currentNews) == 0)
+						{
+							// если в списке есть такая новость, то обновить
+							currentLvElement = currentNews;
+							topicList.remove(i);
+							break;
+						}
+						if(currentLvElement.compareTo(currentNews) < 0)
+						{
+							break;
+						}
+					}
+				}
+				if(topicList.size() > 0)
+				{
+					elements.addAll(topicList);
+				}
+				dataChanged = true;
+			}
+		}
+		// если были изменения в данных - обновить ListView
+		if(dataChanged)
+		{
+			adapter.notifyDataSetChanged();
+		}
+		// отключаем прогрессбар
+		progressDlg.dismiss();
+	}
+	//----- событие при pull down to refresh
+	@Override
+	public void onRefresh()
+	{
+		// начинаем показывать прогресс
+		swipeRefreshLayout.setRefreshing(true);
+		getPageContent(1, true);
+	}
+
+	//----- обработка фоновой загрузки отдельной новости
+	public void startDetailPage(Date date, String url, String title)
+	{
+
+		//TODO: создать новый активити с фреймом
+		// передать в новый активити данные
+		Intent intent = new Intent(getActivity(), NewsActivity.class);
+
+		intent.putExtra(TopicListActivityFragment.NEWS_URL_INTENT, url);
+		intent.putExtra(TopicListActivityFragment.NEWS_TITLE_INTENT, title);
+		intent.putExtra(TopicListActivityFragment.NEWS_DATE_INTENT, date.getTime());
+		startActivity(intent);
+	}
+
+
+	//------------- функции отображения меню -----------------
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
 	{
@@ -195,148 +397,4 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 		return super.onOptionsItemSelected(item);
 	}
-	//------------------- процедура фоновой загрузки страницы -------------------------
-	private void getPageContent(final int page,final boolean insertToTop)
-	{
-
-		// время последнего элемента
-		Date lastTopicListDate = null;
-		if(insertToTop)
-		{
-			if(this.elements.size() > 0)
-			{
-				lastTopicListDate = elements.get(0).getDate();
-			}
-		}
-		else
-		{
-			if(this.elements.size() > 0)
-			{
-				lastTopicListDate = elements.get(elements.size()-1).getDate();
-			}
-		}
-		// запрос на загрузку страницы
-		downloader.getTopicList(getActivity()
-				, page, lastTopicListDate, insertToTop
-				, new IGetTopicListResponseListener()
-				{
-					@Override
-					public void onResponseGetTopicList(List<NewsElement> topicList)
-					{
-						doAfterTopicListReceived(topicList, insertToTop, page);
-					}
-				}
-				, new Response.ErrorListener()
-				{
-					@Override
-					public void onErrorResponse(VolleyError error)
-					{
-						Log.d(LOG_TAG, " on received TL from volley Error [" + error + "]");
-						System.out.println("Error [" + error + "]");
-						Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
-						progressDlg.dismiss();
-					}
-				}
-		);
-	}
-
-	//TODO: нужно синхронизировать , може Synchronized?
-	private /*synchronized*/ void doAfterTopicListReceived(List<NewsElement> topicList, boolean insertToTop, int page)
-	{
-		// отключаем прогрессбар
-		progressDlg.dismiss();
-		boolean dataChanged = false;
-		if(topicList == null || topicList.size() == 0)
-		{
-			return;
-		}
-		if (insertToTop)
-		{
-			// pull to refresh - добавление сверху списка
-			//List<NewsElement> elementsForAppend = new ArrayList<NewsElement>();
-			for(int i = topicList.size()-1; i >= 0 ; i--)
-			{
-				NewsElement currentElement = topicList.get(i);
-				//  сравнить новые новости с уже имеющимися в списке
-				if( elements.size() > 0)
-				{
-					// если данная новость по времени позже самой свежей - удалить из списка
-					if(currentElement.compareTo(elements.get(0)) <= 0)
-					{
-						topicList.remove(i);
-					}
-				}
-			}
-			// если в списке остались элементы, то добавить в основной список новостей
-			if(topicList.size() > 0)
-			{
-				elements.addAll(0,topicList);
-				dataChanged = true;
-			}
-			swipeRefreshLayout.setRefreshing(false);
-		}
-		else
-		{
-			// добавление в конец списка новостей
-			if(topicList.size() > 0)
-			{
-				//---------- для теста pull to refresh--------
-				if(page == 1)
-				{
-					topicList.remove(0);
-				}
-				//--------------------------------------------
-				// нужно проверить, есть ли такие новости уже в списке, если есть - заменить
-				for(NewsElement currentNews:  topicList)
-				{
-					for(NewsElement currentLvElement: elements)
-					{
-						if(currentLvElement.compareTo(currentNews) == 0)
-						{
-							// если в списке есть такая новость, то обновить
-							currentLvElement = currentNews;
-							break;
-						}
-						if(currentLvElement.compareTo(currentNews) < 0)
-						{
-							break;
-						}
-					}
-				}
-				elements.addAll(topicList);
-				dataChanged = true;
-			}
-		}
-		// если были изменения в данных - обновить ListView
-		if(dataChanged)
-		{
-			adapter.notifyDataSetChanged();
-		}
-		// отключаем прогрессбар
-		progressDlg.dismiss();
-	}
-	//----- событие при pull down to refresh
-	@Override
-	public void onRefresh()
-	{
-		// начинаем показывать прогресс
-		swipeRefreshLayout.setRefreshing(true);
-		getPageContent(1,true);
-	}
-
-	//----- обработка фоновой загрузки отдельнойновости
-	public void OnLvClicked(NewsElement selectedItem)
-	{
-
-		//TODO: создать новый активити с фреймом
-		// передать в новый активити данные
-		Intent intent = new Intent(getActivity(), NewsActivity.class);
-
-		intent.putExtra(TopicListActivityFragment.NEWS_URL_INTENT, selectedItem.getUrl());
-		intent.putExtra(TopicListActivityFragment.NEWS_TITLE_INTENT, selectedItem.getTitle());
-		intent.putExtra(TopicListActivityFragment.NEWS_DATE_INTENT, selectedItem.getDate().getTime());
-		startActivity(intent);
-
-	}
-
 }
