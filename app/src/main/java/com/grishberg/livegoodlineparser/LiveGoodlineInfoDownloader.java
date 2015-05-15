@@ -18,7 +18,7 @@ import com.grishberg.livegoodlineparser.data.IClearDbListener;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
 import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
 
 import java.util.ArrayList;
 import java.util.Date;

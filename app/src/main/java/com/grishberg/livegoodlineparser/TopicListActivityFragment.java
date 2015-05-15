@@ -21,7 +21,7 @@ import com.android.volley.VolleyError;
 import com.grishberg.livegoodlineparser.adapters.CustomListAdapter;
 import com.grishberg.livegoodlineparser.data.IClearDbListener;
 import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
-import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.grishberg.livegoodlineparser.sheduling.AlarmReceiver;
 
 import java.util.ArrayList;

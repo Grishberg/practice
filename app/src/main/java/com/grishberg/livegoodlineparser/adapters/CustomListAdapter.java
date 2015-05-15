@@ -9,7 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.grishberg.livegoodlineparser.R;
-import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.bitmaputils.CircleTransform;
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -68,7 +69,7 @@ public class CustomListAdapter extends BaseAdapter
 
         if(p.getImageLink().length() > 0)
         {
-            mPicasso.load(p.getImageLink()).into(img);
+            mPicasso.load(p.getImageLink()).transform(new CircleTransform()).into(img);
         }
         else
         {

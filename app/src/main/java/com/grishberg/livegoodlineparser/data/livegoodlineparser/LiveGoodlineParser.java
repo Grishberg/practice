@@ -1,5 +1,7 @@
 package com.grishberg.livegoodlineparser.data.livegoodlineparser;
 
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

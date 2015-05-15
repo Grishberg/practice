@@ -20,7 +20,7 @@ import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.TopicListActivity;
 import com.grishberg.livegoodlineparser.TopicListActivityFragment;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
 
 import java.util.Date;
 import java.util.List;
@@ -166,7 +166,7 @@ public class CheckNewsUpdatesService extends IntentService
 					.setTicker("Обновления.")
 					.setWhen(System.currentTimeMillis())
 					.setAutoCancel(true)
-					.setSmallIcon(R.drawable.notifyicon)
+					.setSmallIcon(R.mipmap.ic_launcher)
 					.build();
 		}
 

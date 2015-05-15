@@ -22,7 +22,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.data.livegoodlineparser.NewsElement;
+import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.squareup.picasso.Picasso;
 
 import java.util.Date;

@@ -1,39 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
               android:layout_width="fill_parent"
-              android:layout_height="wrap_content">
+              android:layout_height="wrap_content"
+    >
 <!-- image -->
     <ImageView
         android:id="@+id/thumbnail"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_alignParentLeft="true"
-        />
+        android:layout_gravity="center"/>
     <!-- title -->
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="fill_parent"
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:text="titile"
-        android:layout_marginTop="10dp"
-        android:layout_alignParentTop="true"
-        android:layout_toRightOf="@+id/thumbnail"
-        android:layout_toEndOf="@+id/thumbnail"
-        android:textColor="@color/abc_primary_text_material_light"
-        android:textSize="24dp"/>
-    <!-- date -->
-    <TextView
-        android:id="@+id/tvDate"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tvTitle"
-        android:text="date"
-        android:layout_marginTop="10dp"
-        android:layout_toRightOf="@+id/thumbnail"
-        android:layout_toEndOf="@+id/thumbnail"
-        android:textColor="@color/abc_primary_text_material_light"
-        android:textSize="18dp"/>
+        android:layout_gravity="center|bottom"
+        android:gravity="center">
 
-</RelativeLayout>
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:text="titile"
+            android:layout_marginTop="10dp"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/thumbnail"
+            android:layout_toEndOf="@+id/thumbnail"
+            android:textColor="@color/abc_primary_text_material_light"
+            android:textSize="24dp"/>
+
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvTitle"
+            android:text="date"
+            android:layout_marginTop="10dp"
+            android:layout_toRightOf="@+id/thumbnail"
+            android:layout_toEndOf="@+id/thumbnail"
+            android:textColor="@color/abc_primary_text_material_light"
+            android:textSize="18dp"/>
+    </LinearLayout>
+
+    <!-- date -->
+
+</LinearLayout>
