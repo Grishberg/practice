@@ -7,5 +7,5 @@ import com.grishberg.livegoodlineparser.data.model.NewsElement;
  */
 public interface IGetNewsResponseListener
 {
-	public void onResponseGetNewsPage(String newsBody, boolean fromCache);
+	public void onResponseGetNewsPage(String newsBody, boolean fromCache, int errorCode);
 }

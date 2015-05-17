@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -87,21 +88,20 @@ public class NewsActivityFragment extends Fragment
 		downloader.getNewsPage(getActivity(), url, date, new IGetNewsResponseListener()
 				{
 					@Override
-					public void onResponseGetNewsPage(String newsBody, boolean fromCache)
+					public void onResponseGetNewsPage(String newsBody, boolean fromCache, int errorCode)
 					{
-						doAfterNewsBodyReceived(newsBody,fromCache);
-					}
-				},
-				new Response.ErrorListener()
-				{
-					@Override
-					public void onErrorResponse(VolleyError error)
-					{
-						System.out.println("Error [" + error + "]");
-						progressDlg.dismiss();
+						if(errorCode == 0)
+						{
+							doAfterNewsBodyReceived(newsBody, fromCache);
+						}
+						else
+						{
+							progressDlg.dismiss();
+							Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
+
+						}
 					}
 				});
-
 	}
 
 	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache)

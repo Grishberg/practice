@@ -68,8 +68,7 @@ public class LiveGoodlineInfoDownloader
 			, final int page
 			, final Date lastPageDate
 			, final boolean insertToTop
-			, final IGetTopicListResponseListener listener
-			, final Response.ErrorListener errorListener)
+			, final IGetTopicListResponseListener listener )
 	{
 		// 1) проверить в базе наличие данных (в потоке)
 		GetTopicListTask task = new GetTopicListTask();
@@ -85,10 +84,10 @@ public class LiveGoodlineInfoDownloader
 			}
 
 			@Override
-			public void onDone(List<NewsElement> result, boolean fromCache)
+			public void onDone(List<NewsElement> result, boolean fromCache, int errorCode)
 			{
 				// вернуть результат
-				listener.onResponseGetTopicList(result,fromCache);
+				listener.onResponseGetTopicList(result,fromCache, errorCode);
 			}
 
 			@Override
@@ -104,8 +103,7 @@ public class LiveGoodlineInfoDownloader
 	public void getNewsPage(final Context context
 			, final String url
 			, final Date date
-			, final IGetNewsResponseListener listener
-			, final Response.ErrorListener errorListener)
+			, final IGetNewsResponseListener listener)
 	{
 		// поискать асинхронно в потоке тело новости
 		GetNewsBodyTask getNewsBodyTask = new GetNewsBodyTask();
@@ -120,12 +118,12 @@ public class LiveGoodlineInfoDownloader
 			}
 
 			@Override
-			public void onDone(String body, boolean fromCache)
+			public void onDone(String body, boolean fromCache, int errorCode)
 			{
 				if (body != null)
 				{
 					// в кэше есть новость - вернуть данные
-					listener.onResponseGetNewsPage(body, fromCache);
+					listener.onResponseGetNewsPage(body, fromCache, errorCode);
 				}
 			}
 		});
@@ -399,7 +397,7 @@ public class LiveGoodlineInfoDownloader
 	interface GetTopicTaskParamers
 	{
 		public int 		getPage();
-		public void 	onDone(List<NewsElement> result, boolean fromCache);
+		public void 	onDone(List<NewsElement> result, boolean fromCache,int errorCode);
 		public Date 	getDate();
 		public boolean	getInsertToTop();
 	}
@@ -408,6 +406,7 @@ public class LiveGoodlineInfoDownloader
 	private class GetTopicListTask extends AsyncTask<GetTopicTaskParamers, List<NewsElement>, List<NewsElement> >
 	{
 		private GetTopicTaskParamers inputParam;
+		private int errorCode;
 		protected List<NewsElement> doInBackground(GetTopicTaskParamers... params)
 		{
 			List<NewsElement> topicListFromCache	= null;
@@ -416,6 +415,7 @@ public class LiveGoodlineInfoDownloader
 			Date date			= inputParam.getDate();
 			int page			= inputParam.getPage();
 			boolean	insertToTop	= inputParam.getInsertToTop();
+			errorCode			= 0;
 
 			topicListFromCache	= dbHelper.getTopicList(date);
 
@@ -450,11 +450,15 @@ public class LiveGoodlineInfoDownloader
 				// сохранить кэш в базу
 				dbHelper.storeTopicList(topicListFromWeb);
 				// спарсить полученную строку
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e)
+			{
+				errorCode = -1;
                 e.printStackTrace();
             } catch (ExecutionException e) {
+				errorCode = -2;
                 e.printStackTrace();
             } catch (TimeoutException e) {
+				errorCode = -3;
                 e.printStackTrace();
             }
 
@@ -466,11 +470,11 @@ public class LiveGoodlineInfoDownloader
 		{
 			// отобразить данные из кэша
 			List<NewsElement> params	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(params, true);
+			inputParam.onDone(params, true, errorCode);
 		}
 		protected void onPostExecute(List<NewsElement> result)
 		{
-			inputParam.onDone(result, false);
+			inputParam.onDone(result, false, errorCode);
 		}
 	}
 
@@ -505,13 +509,14 @@ public class LiveGoodlineInfoDownloader
 	interface GetNewsBodyTaskParameters
 	{
 		public Date getDate();
-		public void onDone(String body, boolean fromCache);
+		public void onDone(String body, boolean fromCache, int error);
 		public String getUrl();
 	}
 
 	private class GetNewsBodyTask extends AsyncTask<GetNewsBodyTaskParameters, String, String >
 	{
 		private GetNewsBodyTaskParameters inputParam;
+		private int errorCode;
 		protected String doInBackground(GetNewsBodyTaskParameters... params)
 		{
 			CachedNewsBodyContainer cachedNewsBody	= null;
@@ -519,7 +524,7 @@ public class LiveGoodlineInfoDownloader
 			inputParam	= params.length > 0 ? params[0] : null;
 			Date date	= inputParam.getDate();
 			String url	= inputParam.getUrl();
-
+			errorCode		= 0;
 			//TODO: вернуть признак того, что это часть новости
 			cachedNewsBody	= dbHelper.getNewsPage(date);
 
@@ -555,29 +560,35 @@ public class LiveGoodlineInfoDownloader
 				webNewsBody = LiveGoodlineParser.getNews(response);
 				//сохранить в кэше
 				dbHelper.updateNewsBody(date,webNewsBody);
+				Log.d(LOG_TAG, "Данные из сети");
 
-			} catch (InterruptedException e) {
+			} catch (InterruptedException e)
+			{
+				errorCode = -1;
 				e.printStackTrace();
-			} catch (ExecutionException e) {
+			} catch (ExecutionException e)
+			{
+				errorCode = -2;
 				e.printStackTrace();
-			} catch (TimeoutException e) {
+			} catch (TimeoutException e)
+			{
+				errorCode = -3;
 				e.printStackTrace();
 			}
 
-			Log.d(LOG_TAG,"Данные из сети");
 			return webNewsBody;
 		}
 		// вывести промежуточный вариант из кэша
 		protected void onProgressUpdate(String... progress)
 		{
 			String result	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(result, true);
+			inputParam.onDone(result, true, errorCode);
 
 		}
 		// вывести итоговый вариант
 		protected void onPostExecute(String result)
 		{
-			inputParam.onDone(result, false);
+			inputParam.onDone(result, false, errorCode);
 		}
 	}
 

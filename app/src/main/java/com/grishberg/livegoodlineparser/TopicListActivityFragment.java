@@ -243,36 +243,47 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 				, new IGetTopicListResponseListener()
 				{
 					@Override
-					public void onResponseGetTopicList(List<NewsElement> topicList, boolean fromCache)
+					public void onResponseGetTopicList(List<NewsElement> topicList, boolean fromCache, int errorCode)
 					{
 						downloadingPage = false;
-
-						doAfterTopicListReceived(topicList, insertToTop, page);
-					}
-				}
-				, new Response.ErrorListener()
-				{
-					@Override
-					public void onErrorResponse(VolleyError error)
-					{
-						Log.d(LOG_TAG, " on received TL from volley Error [" + error + "]");
-						downloadingPage = false;
-						System.out.println("Error [" + error + "]");
-						Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
-						progressDlg.dismiss();
+						if(errorCode == 0)
+						{
+							doAfterTopicListReceived(topicList, insertToTop, page, fromCache);
+						}
+						else
+						{
+							// ошибка
+							Log.d(LOG_TAG, " ошибка во время загрузки из volley");
+							downloadingPage = false;
+							if(elements.size() == 0)
+							{
+								hideProgressBar();
+							}
+							if(insertToTop)
+							{
+								swipeRefreshLayout.setRefreshing(false);
+							}
+							Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
+							progressDlg.dismiss();
+						}
 					}
 				}
 		);
 	}
 
 	//TODO: нужно синхронизировать , може Synchronized?
-	private /*synchronized*/ void doAfterTopicListReceived(List<NewsElement> topicList, boolean insertToTop, int page)
+	private /*synchronized*/ void doAfterTopicListReceived(List<NewsElement> topicList
+			, boolean insertToTop, int page, boolean fromCache)
 	{
 
 		boolean dataChanged = false;
 		if(insertToTop)
 		{
 			progressDlg.dismiss();
+		}
+		if(elements.size() == 0)
+		{
+			hideProgressBar();
 		}
 		if(topicList == null || topicList.size() == 0)
 		{
@@ -305,10 +316,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 		else
 		{
 			// добавление в конец списка новостей
-			if(elements.size() == 0)
-			{
-				hideProgressBar();
-			}
+
 			if(topicList.size() > 0)
 			{
 				//---------- для теста pull to refresh--------
