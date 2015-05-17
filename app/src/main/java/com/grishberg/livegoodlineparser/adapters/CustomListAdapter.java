@@ -6,11 +6,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.bitmaputils.CircleTransform;
 import com.grishberg.livegoodlineparser.data.model.NewsElement;
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -65,16 +67,37 @@ public class CustomListAdapter extends BaseAdapter
         // заполняем View
         ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());
         ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDateStr());
-        ImageView img = (ImageView) view.findViewById(R.id.thumbnail);
+        final ProgressBar progressBar   = (ProgressBar) view.findViewById(R.id.icon_loading_spinner);
+        final ImageView img             = (ImageView) view.findViewById(R.id.thumbnail);
+        //img.setVisibility(View.GONE);
 
         if(p.getImageLink().length() > 0)
         {
-            mPicasso.load(p.getImageLink()).transform(new CircleTransform()).into(img);
+            mPicasso.load(p.getImageLink()).transform(new CircleTransform()).into(img, new Callback()
+            {
+                @Override
+                public void onSuccess()
+                {
+                    img.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onError()
+                {
+                    img.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
+
+                }
+            });
         }
         else
         {
             // отображать пустую картинку для таких случаев
+            progressBar.setVisibility(View.GONE);
+            img.setVisibility(View.VISIBLE);
             img.setImageResource(R.drawable.goodlinelogomini);
+
         }
         return view;
     }

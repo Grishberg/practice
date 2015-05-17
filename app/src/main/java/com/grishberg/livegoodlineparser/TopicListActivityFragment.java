@@ -1,5 +1,7 @@
 package com.grishberg.livegoodlineparser;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v4.app.Fragment;
@@ -14,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.android.volley.Response;
@@ -21,6 +24,7 @@ import com.android.volley.VolleyError;
 import com.grishberg.livegoodlineparser.adapters.CustomListAdapter;
 import com.grishberg.livegoodlineparser.data.IClearDbListener;
 import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
+import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.grishberg.livegoodlineparser.sheduling.AlarmReceiver;
 
@@ -51,6 +55,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 
 	private ListView lvNews;
+	private ProgressBar mProgressBar;
 	private SwipeRefreshLayout  swipeRefreshLayout;
 	private CustomListAdapter adapter;
 	private List<NewsElement> elements;
@@ -59,7 +64,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	private LiveGoodlineInfoDownloader downloader;
 	private AlarmReceiver	alarmReceiver;
 	private boolean			downloadingPage = false;
-
+	private int mShortAnimationDuration;
 
 	public TopicListActivityFragment()
 	{
@@ -113,7 +118,17 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			}
 		});
 
+		// скрыть список новостей
+		lvNews.setVisibility(View.GONE);
+
+		// настройка анимации перехода
+		mShortAnimationDuration = getResources().getInteger(
+				android.R.integer.config_shortAnimTime);
+
+
 		// отображение прогрессбара
+		mProgressBar	= (ProgressBar) view.findViewById(R.id.loading_spinner);
+
 		progressDlg = new ProgressDialog(getActivity());
 		progressDlg.setTitle("Ожидание");
 		progressDlg.setMessage("Идет обновление новостей...");
@@ -169,13 +184,37 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 	}
 
+	// скрытие прогрессбара и отображение списка
+	private void hideProgressBar()
+	{
+		lvNews.setAlpha(0f);
+		lvNews.setVisibility(View.VISIBLE);
+
+		lvNews.animate()
+				.alpha(1f)
+				.setDuration(mShortAnimationDuration)
+				.setListener(null);
+
+		mProgressBar.animate()
+				.alpha(0f)
+				.setDuration(mShortAnimationDuration)
+				.setListener(new AnimatorListenerAdapter()
+				{
+					@Override
+					public void onAnimationEnd(Animator animation)
+					{
+						mProgressBar.setVisibility(View.GONE);
+					}
+				});
+	}
+
 	//------------------- процедура фоновой загрузки страницы -------------------------
 	private void getPageContent(final int page,final boolean insertToTop)
 	{
 		// не запускать обновление страницы, если уже идет загрузка.
 		if (downloadingPage) return;
 		downloadingPage	= true;
-		Log.d(LOG_TAG, "on get page, page = "+page+", insertToTop = "+insertToTop);
+		Log.d(LOG_TAG, "on get page, page = " + page + ", insertToTop = " + insertToTop);
 
 		// если обновление новостей - отобразить прогресс
 		if (insertToTop)
@@ -207,7 +246,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 					public void onResponseGetTopicList(List<NewsElement> topicList, boolean fromCache)
 					{
 						downloadingPage = false;
-						progressDlg.dismiss();
+
 						doAfterTopicListReceived(topicList, insertToTop, page);
 					}
 				}
@@ -231,6 +270,10 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 	{
 
 		boolean dataChanged = false;
+		if(insertToTop)
+		{
+			progressDlg.dismiss();
+		}
 		if(topicList == null || topicList.size() == 0)
 		{
 			return;
@@ -262,6 +305,10 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 		else
 		{
 			// добавление в конец списка новостей
+			if(elements.size() == 0)
+			{
+				hideProgressBar();
+			}
 			if(topicList.size() > 0)
 			{
 				//---------- для теста pull to refresh--------

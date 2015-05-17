@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.data;
 
 import android.content.Context;
 import android.content.ContentValues;
@@ -14,6 +14,7 @@ import com.android.volley.Response;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.grishberg.livegoodlineparser.TopicListActivityFragment;
 import com.grishberg.livegoodlineparser.data.IClearDbListener;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
 import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;

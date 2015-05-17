@@ -15,7 +15,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.LiveGoodlineInfoDownloader;
+import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.TopicListActivity;
 import com.grishberg.livegoodlineparser.TopicListActivityFragment;
@@ -52,7 +52,7 @@ public class CheckNewsUpdatesService extends IntentService
 	@Override
 	protected void onHandleIntent(Intent intent)
 	{
-		Log.d(LOG_TAG," on Handle intent");
+		Log.d(LOG_TAG," проверка на наличие новых новостей");
 		// синхронная загрузка из Volley
 		RequestQueue queue			= Volley.newRequestQueue(getApplicationContext());
 		RequestFuture<String> futureRequest = RequestFuture.newFuture();
@@ -154,7 +154,7 @@ public class CheckNewsUpdatesService extends IntentService
 					.setTicker("Обновления.")
 					.setWhen(System.currentTimeMillis())
 					.setAutoCancel(true)
-					.setSmallIcon(R.drawable.notifyicon)
+					.setSmallIcon(R.mipmap.ic_launcher)
 					.setDefaults(Notification.DEFAULT_SOUND)
 					.build();
 		}
