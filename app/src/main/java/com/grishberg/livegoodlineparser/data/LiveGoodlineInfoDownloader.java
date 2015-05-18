@@ -447,6 +447,19 @@ public class LiveGoodlineInfoDownloader
 			{
                 String response = futureRequest.get(TopicListActivityFragment.VOLLEY_SYNC_TIMEOUT, TimeUnit.SECONDS);
 				topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
+
+				//=============================================================
+				//++ для отладки
+				//=============================================================
+				if(page == 1 && insertToTop == false)
+				{
+					if(topicListFromWeb != null && topicListFromWeb.size() > 0)
+					{
+						topicListFromWeb.remove(0);
+					}
+				}
+				//--
+
 				// сохранить кэш в базу
 				dbHelper.storeTopicList(topicListFromWeb);
 				// спарсить полученную строку
@@ -626,7 +639,7 @@ public class LiveGoodlineInfoDownloader
 		IClearDbListener inputParams;
 		protected Void doInBackground(IClearDbListener... params)
 		{
-			inputParams = params.length > 0 ? params[0] : null;
+			inputParams	= params.length > 0 ? params[0] : null;
 			dbHelper.clearDb();
 			return null;
 		}

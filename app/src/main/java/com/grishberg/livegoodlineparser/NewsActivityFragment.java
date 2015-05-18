@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.grishberg.livegoodlineparser.bitmaputils.BitmapTransform;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
 import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.squareup.picasso.Picasso;
@@ -39,6 +40,9 @@ public class NewsActivityFragment extends Fragment
 	private TextView tvTitle;
 	private TextView tvNewsBody;
 	private ProgressDialog progressDlg;
+	private static final int MAX_WIDTH = 1024;
+	private static final int MAX_HEIGHT = 768;
+	private final int mSize = (int) Math.ceil(Math.sqrt(MAX_WIDTH * MAX_HEIGHT));
 
 	// загрузчик новостей
 	private LiveGoodlineInfoDownloader downloader;
@@ -163,7 +167,10 @@ public class NewsActivityFragment extends Fragment
 			t = params[0];
 			try
 			{
-				return Picasso.with(context).load(source).get();
+				return Picasso.with(context).load(source)
+						.transform(new BitmapTransform(MAX_WIDTH, MAX_HEIGHT))
+						.resize(mSize, mSize).centerInside()
+						.get();
 			} catch (Exception e)
 			{
 				return null;
@@ -178,12 +185,14 @@ public class NewsActivityFragment extends Fragment
 				Drawable d = new BitmapDrawable(getResources(), bitmap);
 				Point size = new Point();
 				getActivity().getWindowManager().getDefaultDisplay().getSize(size);
-				// Lets calculate the ratio according to the screen width in px
-				int multiplier = size.x / bitmap.getWidth();
+				// вычисление коэфициента, для пропорционального изменения размера фотографий
+				float multiplier	= (float)size.x /(float) bitmap.getWidth();
+				int newWidth		= (int)(bitmap.getWidth() * multiplier);
+				int newHeight		= (int)(bitmap.getHeight() * multiplier);
+
 				levelListDrawable.addLevel(1, 1, d);
 				// Set bounds width  and height according to the bitmap resized size
-				//levelListDrawable.setBounds(0, 0, bitmap.getWidth() * multiplier, bitmap.getHeight() * multiplier);
-				levelListDrawable.setBounds(0, 0, bitmap.getWidth() * multiplier, bitmap.getHeight() * multiplier);
+				levelListDrawable.setBounds(0, 0, newWidth,newHeight);
 
 				levelListDrawable.setLevel(1);
 				t.setText(t.getText()); // invalidate() doesn't work correctly...

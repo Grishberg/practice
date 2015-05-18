@@ -140,13 +140,16 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 		return view;
 	}
 
+
 	@Override
 	public void onResume()
 	{
 		super.onResume();
 
 		// проверить, не было ли команды от Notification
-		Intent intent = getActivity().getIntent();
+		Intent intent = ((TopicListActivity)getActivity()).getLastIntent();
+		if (intent == null) return;
+
 		String action = intent.getAction();
 		if( action != null)
 		{

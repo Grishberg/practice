@@ -28,7 +28,6 @@ public class LiveGoodlineParser
     public static List<NewsElement> getNewsPerPage(String content)
     {
         List<NewsElement> elements = new ArrayList<NewsElement>();
-        //TODO: спарсить content
 
         Document doc            = Jsoup.parse(content);
         Element container       = doc.body().getElementById("container");

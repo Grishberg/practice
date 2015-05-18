@@ -31,11 +31,10 @@ import java.util.concurrent.TimeoutException;
 public class CheckNewsUpdatesService extends IntentService
 {
 	public static final String LOG_TAG = "LiveGL.service";
-	public static final String ACTION_Update = "com.grishberg.livegoodlineinfo.UPDATE";
 	private static final int MY_NOTIFICATION_ID=1;
 
 	NotificationManager notificationManager;
-	Notification notification;
+
 
 	public CheckNewsUpdatesService()
 	{
@@ -118,22 +117,28 @@ public class CheckNewsUpdatesService extends IntentService
 		}
 		return "";
 	}
+
 	// запуск уведомления
 	public void addNotification(List<NewsElement> topicList, boolean turnOnSound, Intent intent)
 	{
+
 		String message = "";
+		Notification notification;
 		// послать команду на обновление активити, либо на открытие новости.
 		Intent notificationIntent = new Intent(getApplicationContext(), TopicListActivity.class);
 
 
-		notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); //| Intent.FLAG_ACTIVITY_SINGLE_TOP
+		notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+				|Intent.FLAG_ACTIVITY_SINGLE_TOP
+		); //
 
 		if (topicList.size() == 1)
 		{
+			//COMMAND_OPEN_NEWS_FROM_SERVICE
+			notificationIntent.setAction(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE);
 			notificationIntent.putExtra(TopicListActivityFragment.NEWS_DATE_INTENT, topicList.get(0).getDate().getTime());
 			notificationIntent.putExtra(TopicListActivityFragment.NEWS_URL_INTENT, topicList.get(0).getUrl());
 			notificationIntent.putExtra(TopicListActivityFragment.NEWS_TITLE_INTENT, topicList.get(0).getTitle());
-
 			message = topicList.get(0).getTitle();
 		}
 		else
@@ -143,7 +148,7 @@ public class CheckNewsUpdatesService extends IntentService
 		}
 
 		PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-				notificationIntent, 0);
+				notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
 		if(turnOnSound )
@@ -173,6 +178,7 @@ public class CheckNewsUpdatesService extends IntentService
 		notification.contentIntent = pendingIntent;
 		notification.flags |= Notification.FLAG_AUTO_CANCEL;
 		notificationManager.notify(MY_NOTIFICATION_ID, notification);
+
 	}
 
 	@Override
