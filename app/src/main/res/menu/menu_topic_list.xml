@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:context="com.grishberg.livegoodlineparser.TopicListActivity">
+      tools:context="com.grishberg.livegoodlineparser.ui.activities.TopicListActivity">
       <item android:id="@+id/action_settings"
           android:title="@string/action_clear_cache"
           android:orderInCategory="100"

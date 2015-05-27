@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser.bitmaputils;
+package com.grishberg.livegoodlineparser.ui.bitmaputils;
 
 /**
  * Created by G on 15.05.15.

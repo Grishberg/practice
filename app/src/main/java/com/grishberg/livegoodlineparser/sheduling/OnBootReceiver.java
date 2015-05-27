@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.grishberg.livegoodlineparser.TopicListActivityFragment;
+import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
 
 public class OnBootReceiver extends BroadcastReceiver
 {

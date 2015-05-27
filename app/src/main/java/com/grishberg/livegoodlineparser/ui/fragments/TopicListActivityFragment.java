@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.ui.fragments;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -19,9 +19,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.grishberg.livegoodlineparser.adapters.CustomListAdapter;
+import com.grishberg.livegoodlineparser.ui.listeners.InfinityScrollListener;
+import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.ui.activities.NewsActivity;
+import com.grishberg.livegoodlineparser.ui.activities.TopicListActivity;
+import com.grishberg.livegoodlineparser.ui.adapters.CustomListAdapter;
 import com.grishberg.livegoodlineparser.data.IClearDbListener;
 import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
 import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;

@@ -17,8 +17,8 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.grishberg.livegoodlineparser.R;
-import com.grishberg.livegoodlineparser.TopicListActivity;
-import com.grishberg.livegoodlineparser.TopicListActivityFragment;
+import com.grishberg.livegoodlineparser.ui.activities.TopicListActivity;
+import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
 import com.grishberg.livegoodlineparser.data.model.NewsElement;
 

@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser.bitmaputils;
+package com.grishberg.livegoodlineparser.ui.bitmaputils;
 import android.graphics.Bitmap;
 import com.squareup.picasso.Transformation;
 

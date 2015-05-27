@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.ui.listeners;
 
 import android.widget.AbsListView;
 

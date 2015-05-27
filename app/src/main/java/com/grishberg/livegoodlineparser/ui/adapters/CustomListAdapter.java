@@ -1,4 +1,4 @@
-package com.grishberg.livegoodlineparser.adapters;
+package com.grishberg.livegoodlineparser.ui.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.grishberg.livegoodlineparser.R;
-import com.grishberg.livegoodlineparser.bitmaputils.CircleTransform;
+import com.grishberg.livegoodlineparser.ui.bitmaputils.CircleTransform;
 import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;

@@ -10,14 +10,10 @@ import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.TopicListActivityFragment;
-import com.grishberg.livegoodlineparser.data.IClearDbListener;
-import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
-import com.grishberg.livegoodlineparser.data.IGetTopicListResponseListener;
+import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
 import com.grishberg.livegoodlineparser.data.model.NewsElement;
 
@@ -451,13 +447,13 @@ public class LiveGoodlineInfoDownloader
 				//=============================================================
 				//++ для отладки
 				//=============================================================
-				if(page == 1 && insertToTop == false)
-				{
-					if(topicListFromWeb != null && topicListFromWeb.size() > 0)
-					{
-						topicListFromWeb.remove(0);
-					}
-				}
+				//if(page == 1 && insertToTop == false)
+				//{
+				//	if(topicListFromWeb != null && topicListFromWeb.size() > 0)
+				//	{
+				//		topicListFromWeb.remove(0);
+				//	}
+				//}
 				//--
 
 				// сохранить кэш в базу

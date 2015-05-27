@@ -1,13 +1,11 @@
-package com.grishberg.livegoodlineparser;
+package com.grishberg.livegoodlineparser.ui.activities;
 
-import android.app.FragmentManager;
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+
+import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
 
 
 public class TopicListActivity extends AppCompatActivity
