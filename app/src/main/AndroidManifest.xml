@@ -16,6 +16,8 @@
             android:name=".ui.activities.NewsActivity"
             android:label="@string/title_activity_news" >
         </activity>
+
+
         <activity
             android:name=".ui.activities.TopicListActivity"
             android:label="@string/title_activity_topic_list" >
@@ -47,8 +49,8 @@
         </receiver>
 
         <activity
-            android:name=".ui.activities.FullScreenViewActivity"
-            android:label="@string/title_activity_full_screen_view" >
+            android:name=".ui.activities.ActivityImageGallery"
+            android:label="@string/title_activity_image_gallery" >
         </activity>
     </application>
 

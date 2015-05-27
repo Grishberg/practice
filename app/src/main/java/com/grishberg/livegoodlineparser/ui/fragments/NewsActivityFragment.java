@@ -29,7 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.grishberg.livegoodlineparser.R;
-import com.grishberg.livegoodlineparser.ui.activities.FullScreenViewActivity;
+
 import com.grishberg.livegoodlineparser.ui.activities.NewsActivity;
 import com.grishberg.livegoodlineparser.ui.bitmaputils.BitmapTransform;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
@@ -40,7 +40,7 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
+import com.grishberg.livegoodlineparser.ui.activities.ActivityImageGallery;
 
 
 /**
@@ -211,10 +211,16 @@ public class NewsActivityFragment extends Fragment
 	private void showImagesGallery(int imageIndex, ArrayList<String> imageUrlList)
 	{
 		// launch full screen activity
-		Intent intent = new Intent(getActivity(), FullScreenViewActivity.class);
-		intent.putExtra(FullScreenViewActivityFragment.INTENT_POSITION, imageIndex);
-		intent.putExtra(FullScreenViewActivityFragment.INTENT_URL_ARRAY, imageUrlList);
-		getActivity().startActivity(intent);
+		Intent intent = new Intent(getActivity(), ActivityImageGallery.class);
+		intent.putExtra(ActivityImageGallery.INTENT_POSITION, imageIndex);
+		intent.putExtra(ActivityImageGallery.INTENT_URL_ARRAY, imageUrlList);
+		try
+		{
+			getActivity().startActivity(intent);
+		}catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	private void hideProgress()
