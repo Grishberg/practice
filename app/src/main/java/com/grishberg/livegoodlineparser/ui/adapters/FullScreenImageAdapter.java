@@ -7,8 +7,11 @@ import java.util.ArrayList;
 
 import android.content.res.Resources;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.text.method.Touch;
+import android.util.Log;
 import android.widget.ImageView;
 import java.util.ArrayList;
 
@@ -29,6 +32,9 @@ import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.ui.activities.ActivityImageGallery;
 import com.grishberg.livegoodlineparser.ui.bitmaputils.BitmapTransform;
 import com.grishberg.livegoodlineparser.ui.bitmaputils.TouchImageView;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
@@ -107,18 +113,29 @@ public class FullScreenImageAdapter extends PagerAdapter {
 /**
  * Created by Балдин Сергей on 26.05.2015.
  */
-public class FullScreenImageAdapter extends PagerAdapter {
+public class FullScreenImageAdapter extends PagerAdapter{
 
-	private final Resources resources;
+	private static final String TAG = "LiveGL.FsAdapter";
 	private Activity _activity;
 	private ArrayList<String> mImageLinks;
 	private LayoutInflater inflater;
-	private Target target;
+	private TouchImageView mImgDisplay;
+
+	// для ресайза
+	private int mScreenWidth, mScreenHeight;
+	private int mSize;
 
 	public FullScreenImageAdapter(ActivityImageGallery activityImageGallery, ArrayList<String> imageLinksList, Resources resources) {
 		this._activity = activityImageGallery;
 		this.mImageLinks = imageLinksList;
-		this.resources = resources;
+
+		// запомнить размеры окна для масштабирования измображения
+		Point size			= new Point();
+		this._activity.getWindowManager().getDefaultDisplay().getSize(size);
+		mScreenWidth		= size.x;
+		mScreenHeight		= size.y;
+		mSize = mScreenWidth < mScreenHeight? mScreenWidth: mScreenHeight;
+
 	}
 
 	@Override
@@ -133,47 +150,39 @@ public class FullScreenImageAdapter extends PagerAdapter {
 
 	@Override
 	public Object instantiateItem(ViewGroup container, int position) {
-		final TouchImageView imgDisplay;
 
 		inflater = (LayoutInflater) _activity
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View viewLayout = inflater.inflate(R.layout.image_gallery_item, container,
 				false);
 
-		imgDisplay = (TouchImageView) viewLayout.findViewById(R.id.imgDispImgGal);
+		mImgDisplay = (TouchImageView) viewLayout.findViewById(R.id.imgDispImgGal);
 
-		target  = new Target()
-		{
-			@Override
-			public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-				Drawable d = new BitmapDrawable(resources, bitmap);
-				imgDisplay.setImageDrawable(d);
-			}
-
-			@Override
-			public void onBitmapFailed(Drawable errorDrawable) {
-
-			}
-
-			@Override
-			public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-
-			}
-		};
-		String currentImageLink = mImageLinks.get(position);
-
-		Picasso.with(_activity).load(currentImageLink).into(target);
+		loadImage( mImageLinks.get(position));
 
 		((ViewPager) container).addView(viewLayout);
 
 		return viewLayout;
 	}
 
+	public void loadImage(String url)
+	{
+		ImageLoader imageLoader = ImageLoader.getInstance();
+		DisplayImageOptions options = new DisplayImageOptions.Builder().cacheInMemory(true)
+				.cacheOnDisc(true).resetViewBeforeLoading(true)
+				//.showImageForEmptyUri(fallback)
+				//.showImageOnFail(fallback)
+				//.showImageOnLoading(fallback) // картинка во время загрузки
+				.build();
+
+
+		//download and display image from url
+		imageLoader.displayImage(url, mImgDisplay, options);
+	}
+
 	@Override
 	public void destroyItem(ViewGroup container, int position, Object object) {
 		((ViewPager) container).removeView((RelativeLayout) object);
-		Picasso.with(_activity).cancelRequest(target);
 	}
 
 }

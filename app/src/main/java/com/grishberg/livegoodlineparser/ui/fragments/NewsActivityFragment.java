@@ -35,8 +35,10 @@ import com.grishberg.livegoodlineparser.ui.bitmaputils.BitmapTransform;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
 import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.grishberg.livegoodlineparser.ui.listeners.LinkMovementMethodExt;
+import com.nostra13.universalimageloader.core.ImageLoader;
 import com.squareup.picasso.Picasso;
 
+import java.io.ObjectInputValidation;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +64,8 @@ public class NewsActivityFragment extends Fragment
 	private ArrayList<String> mImageUrlList;
 	// загрузчик новостей
 	private LiveGoodlineInfoDownloader downloader;
-	private Handler mOnClickHandler;
+	private Handler mOnSpannClickHandler;
+	private ImageLoader	mImageLoader;
 
 	public NewsActivityFragment()
 	{
@@ -77,6 +80,7 @@ public class NewsActivityFragment extends Fragment
 		mTvTitle = (TextView) view.findViewById(R.id.tvNewsFragmentTitle);
 		mTvNewsBody = (TextView) view.findViewById(R.id.tvNewsFragmentBody);
 
+		mImageLoader	= ImageLoader.getInstance();
 		// извлекаем ссылку на статью
 		Intent intent = getActivity().getIntent();
 		String newsUrl = intent.getStringExtra(TopicListActivityFragment.NEWS_URL_INTENT);
@@ -94,27 +98,30 @@ public class NewsActivityFragment extends Fragment
 		mTvNewsBody.setText(""); // для удобства настройки расположения элемента
 
 		// событие при клике на ссылку или изображение в статье
-		mOnClickHandler = new Handler()
+		mOnSpannClickHandler = new Handler()
 		{
 			public void handleMessage(Message msg)
 			{
 				if (msg.what == IMAGE_CLICK)
 				{
-					Object span = msg.obj;
-					if (span instanceof URLSpan)
+					Object[] span = (Object[]) msg.obj;
+					for(Object currentSpan: span)
 					{
-						onUrlClick(((URLSpan) span).getURL());
-					}
-					if (span instanceof ImageSpan)
-					{
-						onImageClick(((ImageSpan) span).getSource());
+						if (currentSpan instanceof URLSpan)
+						{
+							onUrlClick(((URLSpan) currentSpan).getURL());
+						}
+						if (currentSpan instanceof ImageSpan)
+						{
+							onImageClick(((ImageSpan) currentSpan).getSource());
+						}
 					}
 				}
 			}
 		};
 
-		mTvNewsBody.setMovementMethod(LinkMovementMethodExt.getInstance(mOnClickHandler, ImageSpan.class));
-		mTvNewsBody.setMovementMethod(LinkMovementMethodExt.getInstance(mOnClickHandler, URLSpan.class));
+		mTvNewsBody.setMovementMethod(new LinkMovementMethodExt(mOnSpannClickHandler
+				, new Class[] {ImageSpan.class, URLSpan.class}));
 
 
 		progressDlg = new ProgressDialog(getActivity());
@@ -128,10 +135,17 @@ public class NewsActivityFragment extends Fragment
 		return view;
 	}
 
+	@Override
+	public void onStop()
+	{
+		super.onStop();
+		if(downloader != null) downloader.onStop();
+	}
+
 	//------------------- процедура фоновой загрузки страницы -------------------------
 	private void getPageContent(String url, Date date)
 	{
-		downloader.getNewsPage(getActivity(), url, date, new IGetNewsResponseListener()
+		downloader.getNewsPage(url, date, new IGetNewsResponseListener()
 		{
 			@Override
 			public void onResponseGetNewsPage(String newsBody, boolean fromCache, int errorCode)
@@ -151,37 +165,45 @@ public class NewsActivityFragment extends Fragment
 
 	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache)
 	{
-		// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
-		if (fromCache == false)
+		try
 		{
-			hideProgress();
-		}
-		if (newsBody == null)
-		{
-			return;
-		}
-		mImageUrlList = new ArrayList<String>();
-		Spanned spanned = Html.fromHtml(newsBody,
-				new Html.ImageGetter()
-				{
-					@Override
-					public Drawable getDrawable(String source) // вызывается для загрузки изображений
+
+			// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
+			if (fromCache == false)
+			{
+				hideProgress();
+			}
+			if (newsBody == null)
+			{
+				return;
+			}
+			mImageUrlList = new ArrayList<String>();
+			Spanned spanned = Html.fromHtml(newsBody,
+					new Html.ImageGetter()
 					{
-						// заполнить массив ссылок на изображения
-						mImageUrlList.add(source);
-						LevelListDrawable d = new LevelListDrawable();
-						Drawable empty = getResources().getDrawable(R.drawable.abc_btn_check_material);
-						;
-						d.addLevel(0, 0, empty);
-						d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
-						new ImageGetterAsyncTask(getActivity(), source, d).execute(mTvNewsBody);
+						@Override
+						public Drawable getDrawable(String source) // вызывается для загрузки изображений
+						{
+							// заполнить массив ссылок на изображения
+							mImageUrlList.add(source);
+							LevelListDrawable d = new LevelListDrawable();
+							Drawable empty = getResources().getDrawable(R.drawable.abc_btn_check_material);
+							;
+							d.addLevel(0, 0, empty);
+							d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
+							new ImageGetterAsyncTask(getActivity(), source, d).execute(mTvNewsBody);
 
-						return d;
-					}
-				}, null);
+							return d;
+						}
+					}, null);
 
-		mTvNewsBody.setText(spanned);
-
+			mTvNewsBody.setText(spanned);
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+			Log.d(TAG," error on set news body "+ex.toString());
+		}
 	}
 
 	// событие вызывается при клике на ссылку
@@ -194,6 +216,7 @@ public class NewsActivityFragment extends Fragment
 	// событие вызывается при клике на картинку
 	private boolean onImageClick(String imageSourceUrl)
 	{
+
 		for (int imageIndex = 0; imageIndex < mImageUrlList.size(); imageIndex++)
 		{
 			if (mImageUrlList.get(imageIndex).equals(imageSourceUrl))
@@ -256,10 +279,12 @@ public class NewsActivityFragment extends Fragment
 			t = params[0];
 			try
 			{
-				return Picasso.with(context).load(source)
-						.transform(new BitmapTransform(MAX_WIDTH, MAX_HEIGHT))
-						.resize(mSize, mSize).centerInside()
-						.get();
+				Bitmap bmp = mImageLoader.loadImageSync(source);
+				//bmp = Picasso.with(context).load(source)
+				//		.transform(new BitmapTransform(MAX_WIDTH, MAX_HEIGHT))
+				//		.resize(mSize, mSize).centerInside()
+				//		.get();
+				return bmp;
 			} catch (Exception e)
 			{
 				return null;

@@ -189,6 +189,16 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 
 	}
 
+	@Override
+	public void onStop()
+	{
+		super.onStop();
+		if(downloader != null)
+		{
+			downloader.onStop();
+		}
+	}
+
 	// скрытие прогрессбара и отображение списка
 	private void hideProgressBar()
 	{
@@ -243,8 +253,7 @@ public class TopicListActivityFragment extends Fragment  implements SwipeRefresh
 			}
 		}
 		// запрос на загрузку страницы
-		downloader.getTopicList(getActivity()
-				, page, lastTopicListDate, insertToTop
+		downloader.getTopicList(page, lastTopicListDate, insertToTop
 				, new IGetTopicListResponseListener()
 				{
 					@Override

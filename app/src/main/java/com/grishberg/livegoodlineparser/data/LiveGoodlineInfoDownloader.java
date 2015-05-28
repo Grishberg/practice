@@ -38,6 +38,8 @@ public class LiveGoodlineInfoDownloader
 	private RequestQueue 	queue; // очередь запросов для Volley
 	private Context			mainContext;
 	//TODO: разобраться с прерыванием потока
+	private GetTopicListTask 	mGetTopicListTask;
+	private GetNewsBodyTask		mGetNewsBodyTask;
 	//public static final String REQUEST_TAG = "VolleyRequestActivity";
 
 	public LiveGoodlineInfoDownloader(Context context)
@@ -54,75 +56,31 @@ public class LiveGoodlineInfoDownloader
 	// остановить фоновые задачи.
 	public void onStop()
 	{
-		//if (queue != null)
-		//{
-		//	queue.cancelAll(REQUEST_TAG);
-		//}
+		if (mGetTopicListTask!= null && mGetTopicListTask.getStatus() == AsyncTask.Status.RUNNING)
+			mGetTopicListTask.cancel(true);
+
+		if (mGetNewsBodyTask!= null && mGetNewsBodyTask.getStatus() == AsyncTask.Status.RUNNING)
+			mGetNewsBodyTask.cancel(true);
 	}
 	// функция извлекает список новостей из кэша, либо из сети
-	public void getTopicList(final Context context
-			, final int page
-			, final Date lastPageDate
-			, final boolean insertToTop
-			, final IGetTopicListResponseListener listener )
+	public void getTopicList(int page
+			,  Date lastPageDate
+			,  boolean insertToTop
+			,  IGetTopicListResponseListener listener )
 	{
 		// 1) проверить в базе наличие данных (в потоке)
-		GetTopicListTask task = new GetTopicListTask();
-		task.execute(new GetTopicTaskParamers()
-		{
-			@Override
-			public boolean getInsertToTop(){ return insertToTop; }
-
-			@Override
-			public int getPage()
-			{
-				return  page;
-			}
-
-			@Override
-			public void onDone(List<NewsElement> result, boolean fromCache, int errorCode)
-			{
-				// вернуть результат
-				listener.onResponseGetTopicList(result,fromCache, errorCode);
-			}
-
-			@Override
-			public Date getDate()
-			{
-				return lastPageDate;
-			}
-		});
-
+		mGetTopicListTask = new GetTopicListTask(page,lastPageDate, insertToTop, listener);
+		mGetTopicListTask.execute();
 	}
 
 	// функция извлекает страницу с новостью из кэша или из сети
-	public void getNewsPage(final Context context
-			, final String url
-			, final Date date
-			, final IGetNewsResponseListener listener)
+	public void getNewsPage( String url
+			,  Date date
+			,  IGetNewsResponseListener listener)
 	{
 		// поискать асинхронно в потоке тело новости
-		GetNewsBodyTask getNewsBodyTask = new GetNewsBodyTask();
-		getNewsBodyTask.execute(new GetNewsBodyTaskParameters()
-		{
-			@Override
-			public String getUrl() { return  url;}
-			@Override
-			public Date getDate()
-			{
-				return date;
-			}
-
-			@Override
-			public void onDone(String body, boolean fromCache, int errorCode)
-			{
-				if (body != null)
-				{
-					// в кэше есть новость - вернуть данные
-					listener.onResponseGetNewsPage(body, fromCache, errorCode);
-				}
-			}
-		});
+		mGetNewsBodyTask = new GetNewsBodyTask(date,url,listener);
+		mGetNewsBodyTask.execute();
 	}
 
 	// очистить кэш
@@ -389,31 +347,31 @@ public class LiveGoodlineInfoDownloader
 		}
 	}
 
-
-	interface GetTopicTaskParamers
-	{
-		public int 		getPage();
-		public void 	onDone(List<NewsElement> result, boolean fromCache,int errorCode);
-		public Date 	getDate();
-		public boolean	getInsertToTop();
-	}
 	//---------------------------------------
 	// Асинхронное выполнение выборки
-	private class GetTopicListTask extends AsyncTask<GetTopicTaskParamers, List<NewsElement>, List<NewsElement> >
+	private class GetTopicListTask extends AsyncTask<Void, List<NewsElement>, List<NewsElement> >
 	{
-		private GetTopicTaskParamers inputParam;
-		private int errorCode;
-		protected List<NewsElement> doInBackground(GetTopicTaskParamers... params)
+		private IGetTopicListResponseListener mListener;
+		private int mPage;
+		private Date mDate;
+		private boolean mIsInserToTop;
+		private int mErrorCode;
+		public GetTopicListTask(int page, Date date, boolean isInsertToTop, IGetTopicListResponseListener listener)
+		{
+			super();
+			mPage	= page;
+			mDate	= date;
+			mIsInserToTop	= isInsertToTop;
+			mListener		= listener;
+		}
+
+		protected List<NewsElement> doInBackground(Void... params)
 		{
 			List<NewsElement> topicListFromCache	= null;
 			List<NewsElement> topicListFromWeb		= null;
-			inputParam			= params.length > 0 ? params[0] : null;
-			Date date			= inputParam.getDate();
-			int page			= inputParam.getPage();
-			boolean	insertToTop	= inputParam.getInsertToTop();
-			errorCode			= 0;
 
-			topicListFromCache	= dbHelper.getTopicList(date);
+			mErrorCode			= 0;
+			topicListFromCache	= dbHelper.getTopicList(mDate);
 
 			//использовать onProgressUpdate для вывода промежуточного результата из кэша
 			if(topicListFromCache != null && topicListFromCache.size() > 0)
@@ -426,9 +384,9 @@ public class LiveGoodlineInfoDownloader
 			//TODO: если статьи добавляются сверху, в цикле добавлять, пока дата любой из статьи
 			//		на странице не равна date
 			// скорректировать URL в зависимости от страницы
-			if(page > 1)
+			if(mPage > 1)
 			{
-				url = String.format("%s/page%d/",mainUrl,page);
+				url = String.format("%s/page%d/",mainUrl,mPage);
 			}
 
 			// синхронная загрузка из Volley
@@ -461,13 +419,13 @@ public class LiveGoodlineInfoDownloader
 				// спарсить полученную строку
             } catch (InterruptedException e)
 			{
-				errorCode = -1;
+				mErrorCode = -1;
                 e.printStackTrace();
             } catch (ExecutionException e) {
-				errorCode = -2;
+				mErrorCode = -2;
                 e.printStackTrace();
             } catch (TimeoutException e) {
-				errorCode = -3;
+				mErrorCode = -3;
                 e.printStackTrace();
             }
 
@@ -479,63 +437,39 @@ public class LiveGoodlineInfoDownloader
 		{
 			// отобразить данные из кэша
 			List<NewsElement> params	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(params, true, errorCode);
+			mListener.onResponseGetTopicList(params, true, mErrorCode);
 		}
 		protected void onPostExecute(List<NewsElement> result)
 		{
-			inputParam.onDone(result, false, errorCode);
+			mListener.onResponseGetTopicList(result, false, mErrorCode);
 		}
 	}
 
-	//--------------------------------------------------
-	// Асинхронное сохранение новостей
-	interface StoreTopicTaskParamers
-	{
-		public List<NewsElement> getTopicNewsList();
-	}
-	private class StoreTopicListTask extends AsyncTask<StoreTopicTaskParamers, Void, Void >
-	{
-		private StoreTopicTaskParamers inputParam;
-		protected Void doInBackground(StoreTopicTaskParamers... params)
-		{
-			inputParam = params.length > 0 ? params[0] : null;
-			List<NewsElement> topicList = inputParam.getTopicNewsList();
-
-			dbHelper.storeTopicList(topicList);
-			return null;
-		}
-		protected void onProgressUpdate(Void... progress)
-		{
-		}
-		protected void onPostExecute(Void result)
-		{
-
-		}
-	}
 
 	//--------------------------------------------------
 	// Асинхронное извлечение тела письма из кэша
-	interface GetNewsBodyTaskParameters
-	{
-		public Date getDate();
-		public void onDone(String body, boolean fromCache, int error);
-		public String getUrl();
-	}
 
-	private class GetNewsBodyTask extends AsyncTask<GetNewsBodyTaskParameters, String, String >
+	private class GetNewsBodyTask extends AsyncTask<Void, String, String >
 	{
-		private GetNewsBodyTaskParameters inputParam;
-		private int errorCode;
-		protected String doInBackground(GetNewsBodyTaskParameters... params)
+		private Date mDate;
+		private String mUrl;
+		private IGetNewsResponseListener mListener;
+		private int mErrorCode;
+		public GetNewsBodyTask(Date date, String url, IGetNewsResponseListener listener)
+		{
+			mDate	= date;
+			mUrl	= url;
+			mListener	= listener;
+		}
+
+		protected String doInBackground(Void... params)
 		{
 			CachedNewsBodyContainer cachedNewsBody	= null;
 			String webNewsBody		= null;
-			inputParam	= params.length > 0 ? params[0] : null;
-			Date date	= inputParam.getDate();
-			String url	= inputParam.getUrl();
-			errorCode		= 0;
+
+			mErrorCode		= 0;
 			//TODO: вернуть признак того, что это часть новости
-			cachedNewsBody	= dbHelper.getNewsPage(date);
+			cachedNewsBody	= dbHelper.getNewsPage(mDate);
 
 			//использовать onProgressUpdate для вывода промежуточного результата из кэша
 			if(cachedNewsBody != null &&
@@ -558,7 +492,7 @@ public class LiveGoodlineInfoDownloader
 			RequestQueue queue			= Volley.newRequestQueue(mainContext);
 			RequestFuture<String> futureRequest = RequestFuture.newFuture();
 			StringRequest getRequest	= new StringRequest(Request.Method.GET
-					, url
+					, mUrl
 					, futureRequest, futureRequest);
 			queue.add(getRequest);
 
@@ -568,20 +502,20 @@ public class LiveGoodlineInfoDownloader
 				// спарсить полученную строку
 				webNewsBody = LiveGoodlineParser.getNews(response);
 				//сохранить в кэше
-				dbHelper.updateNewsBody(date,webNewsBody);
+				dbHelper.updateNewsBody(mDate,webNewsBody);
 				Log.d(LOG_TAG, "Данные из сети");
 
 			} catch (InterruptedException e)
 			{
-				errorCode = -1;
+				mErrorCode = -1;
 				e.printStackTrace();
 			} catch (ExecutionException e)
 			{
-				errorCode = -2;
+				mErrorCode = -2;
 				e.printStackTrace();
 			} catch (TimeoutException e)
 			{
-				errorCode = -3;
+				mErrorCode = -3;
 				e.printStackTrace();
 			}
 
@@ -591,43 +525,17 @@ public class LiveGoodlineInfoDownloader
 		protected void onProgressUpdate(String... progress)
 		{
 			String result	= progress.length > 0 ? progress[0] : null;
-			inputParam.onDone(result, true, errorCode);
+			mListener.onResponseGetNewsPage(result, true, mErrorCode);
 
 		}
 		// вывести итоговый вариант
 		protected void onPostExecute(String result)
 		{
-			inputParam.onDone(result, false, errorCode);
+			mListener.onResponseGetNewsPage(result, false, mErrorCode);
 		}
 	}
 
-	//-----------------------------------------------------
-	// асинхронное сохранение тела новости
-	interface StoreNewsBodyTaskParamers
-	{
-		public String	getNewsBody();
-		public Date		getDate();
-	}
 
-	private class StoreNewsBodyTask extends AsyncTask<StoreNewsBodyTaskParamers, Void, Void >
-	{
-		private StoreNewsBodyTaskParamers inputParam;
-		protected Void doInBackground(StoreNewsBodyTaskParamers... params)
-		{
-			inputParam = params.length > 0 ? params[0] : null;
-			String newsBody = inputParam.getNewsBody();
-			Date date		= inputParam.getDate();
-			dbHelper.updateNewsBody(date, newsBody);
-			return null;
-		}
-		protected void onProgressUpdate(Void... progress)
-		{
-		}
-		protected void onPostExecute(Void result)
-		{
-
-		}
-	}
 
 	// асинхронная очистка кэша
 	private class ClearDbTask extends  AsyncTask<IClearDbListener,Void,Void>

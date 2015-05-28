@@ -34,7 +34,7 @@
             android:layout_alignParentTop="true"
             android:layout_toRightOf="@+id/thumbnail"
             android:layout_toEndOf="@+id/thumbnail"
-            android:textColor="@color/abc_primary_text_material_light"
+            android:textColor="@color/primary_text"
             android:textSize="24dp"/>
 
         <TextView
@@ -46,7 +46,7 @@
             android:layout_marginTop="10dp"
             android:layout_toRightOf="@+id/thumbnail"
             android:layout_toEndOf="@+id/thumbnail"
-            android:textColor="@color/abc_primary_text_material_light"
+            android:textColor="@color/secondary_text"
             android:textSize="18dp"/>
     </LinearLayout>
 

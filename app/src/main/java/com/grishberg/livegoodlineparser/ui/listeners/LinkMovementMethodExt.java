@@ -21,16 +21,17 @@ import java.util.List;
 
 
 public class LinkMovementMethodExt extends LinkMovementMethod {
-	private static LinkMovementMethod sInstance;
+	//private static LinkMovementMethod sInstance;
 	private Handler mHandler			= null;
 	private List<Class> mSpanClassList	= null;
-	public static MovementMethod getInstance(Handler handler,Class spanClass) {
-		if (sInstance == null){
-			sInstance = new LinkMovementMethodExt();
-			((LinkMovementMethodExt)sInstance).mHandler = handler;
+	public LinkMovementMethodExt(Handler handler, Class[] spanClassArray) {
+		super();
+		mHandler	= handler;
+		mSpanClassList = new ArrayList<Class>();
+		for(Class currentSpan: spanClassArray)
+		{
+			mSpanClassList.add(currentSpan);
 		}
-		((LinkMovementMethodExt)sInstance).addClass(spanClass);
-		return sInstance;
 	}
 
 	private void addClass(Class spanClass)
@@ -71,7 +72,7 @@ public class LinkMovementMethodExt extends LinkMovementMethod {
 					if (action == MotionEvent.ACTION_UP)
 					{
 						Message message = mHandler.obtainMessage();
-						message.obj = spans[0];
+						message.obj = spans;
 						message.what = NewsActivityFragment.IMAGE_CLICK;
 						message.sendToTarget();
 						return true;
