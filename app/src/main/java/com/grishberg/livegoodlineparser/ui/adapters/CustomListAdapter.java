@@ -10,8 +10,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
 import com.grishberg.livegoodlineparser.ui.bitmaputils.CircleTransform;
-import com.grishberg.livegoodlineparser.data.model.NewsElement;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -23,10 +23,10 @@ import java.util.List;
 public class CustomListAdapter extends BaseAdapter
 {
     Context context;
-    private List<NewsElement>   items;
+    private List<NewsContainer>   items;
     private LayoutInflater      inflater;
     private Picasso             mPicasso;
-    public CustomListAdapter(Context context,List<NewsElement> elements)
+    public CustomListAdapter(Context context,List<NewsContainer> elements)
     {
         this.items          = elements;
         this.context        = context;
@@ -62,7 +62,7 @@ public class CustomListAdapter extends BaseAdapter
             view = inflater.inflate(R.layout.tableview_cell, parent, false);
         }
 
-        NewsElement p = (NewsElement)getItem(position);
+        NewsContainer p = (NewsContainer)getItem(position);
 
         // заполняем View
         ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());

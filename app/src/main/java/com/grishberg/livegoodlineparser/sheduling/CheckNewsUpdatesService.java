@@ -15,12 +15,15 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
+
 import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetNewsTask;
+import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetTopicListTask;
+import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
+import com.grishberg.livegoodlineparser.data.model.NewsDbHelper;
 import com.grishberg.livegoodlineparser.ui.activities.TopicListActivity;
 import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
-import com.grishberg.livegoodlineparser.data.model.NewsElement;
 
 import java.util.Date;
 import java.util.List;
@@ -34,11 +37,12 @@ public class CheckNewsUpdatesService extends IntentService
 	private static final int MY_NOTIFICATION_ID=1;
 
 	NotificationManager notificationManager;
-
+	private NewsDbHelper mDbHelper;
 
 	public CheckNewsUpdatesService()
 	{
 		super(CheckNewsUpdatesService.class.getName());
+		mDbHelper	= new NewsDbHelper(getApplicationContext());
 	}
 
 	@Override
@@ -56,7 +60,7 @@ public class CheckNewsUpdatesService extends IntentService
 		RequestQueue queue			= Volley.newRequestQueue(getApplicationContext());
 		RequestFuture<String> futureRequest = RequestFuture.newFuture();
 		StringRequest getRequest	= new StringRequest(Request.Method.GET
-				, LiveGoodlineInfoDownloader.mainUrl
+				, GetTopicListTask.mainUrl
 				, futureRequest, futureRequest);
 		queue.add(getRequest);
 
@@ -65,16 +69,16 @@ public class CheckNewsUpdatesService extends IntentService
 			// синхронное извлечение тела страницы
 			String response = futureRequest.get(TopicListActivityFragment.VOLLEY_SYNC_TIMEOUT, TimeUnit.SECONDS);
 			// парсинг полученной строки
-			List<NewsElement> topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
-			LiveGoodlineInfoDownloader downloader = new LiveGoodlineInfoDownloader(getApplicationContext());
-			Date date = downloader.getMaxDateInCache();
+			List<NewsContainer> topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
+
+			Date date = mDbHelper.getMaxStoredDate();
 
 			if(date == null) { 	date = new Date(0); }
 
 			boolean turnOnSound = true;
 			for(int i = topicListFromWeb.size()-1; i >= 0 ; i--)
 			{
-				NewsElement currentNews = topicListFromWeb.get(i);
+				NewsContainer currentNews = topicListFromWeb.get(i);
 				//  сравнить новые новости с датой самых свежих в кэше
 				if( currentNews.getDate().compareTo(date) <= 0)
 				{
@@ -84,9 +88,9 @@ public class CheckNewsUpdatesService extends IntentService
 
 			if(topicListFromWeb != null && topicListFromWeb.size() > 0)
 			{
-				addNotification( topicListFromWeb, true,intent);
+				addNotification(topicListFromWeb, true, intent);
 				Log.d(LOG_TAG,"сохранение новых сообщений в кэш");
-				downloader.addNewsToCache(topicListFromWeb);
+				mDbHelper.storeTopicList(topicListFromWeb);
 			}
 
 		} catch (InterruptedException e) {
@@ -119,7 +123,7 @@ public class CheckNewsUpdatesService extends IntentService
 	}
 
 	// запуск уведомления
-	public void addNotification(List<NewsElement> topicList, boolean turnOnSound, Intent intent)
+	public void addNotification(List<NewsContainer> topicList, boolean turnOnSound, Intent intent)
 	{
 
 		String message = "";

@@ -1,6 +1,8 @@
 package com.grishberg.livegoodlineparser.data.livegoodlineparser;
 
-import com.grishberg.livegoodlineparser.data.model.NewsElement;
+
+import com.grishberg.livegoodlineparser.data.containers.NewsBodyElementContainer;
+import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,18 +18,14 @@ import java.util.List;
  */
 public class LiveGoodlineParser
 {
-    final String newsTag        = "<article class=\"topic topic-type-topic js-topic out-topic\">";
-    final String shortBodyTag   = "<div class=\"topic-content text\">";
-    final String titleTag       = "<h2 class=\"topic-title word-wrap\">";
-
     public LiveGoodlineParser()
     {
 
     }
     // парсинг статей
-    public static List<NewsElement> getNewsPerPage(String content)
+    public static List<NewsContainer> getNewsPerPage(String content)
     {
-        List<NewsElement> elements = new ArrayList<NewsElement>();
+        List<NewsContainer> elements = new ArrayList<NewsContainer>();
 
         Document doc            = Jsoup.parse(content);
         Element container       = doc.body().getElementById("container");
@@ -40,7 +38,7 @@ public class LiveGoodlineParser
             for(Element e: articleBlocks)
             {
                 // цикл по блокам со статьями
-                NewsElement element = null;
+                NewsContainer element = null;
                 try
                 {
                     String imageLink    = "";
@@ -59,8 +57,8 @@ public class LiveGoodlineParser
                     Element header      = divTopic.getElementsByTag("header").first();
                     Element headerTitle = header.getElementsByClass("topic-title").first();
                     Element title       = headerTitle.getElementsByTag("a").first();
-                    String articleUrl  = title.attr("href");
-                    String articleTitle  = title.html();
+                    String articleUrl   = title.attr("href");
+                    String articleTitle = title.html();
 
                     Element timeElement = header.getElementsByTag("time").first();
                     String timeStr      = timeElement.attr("datetime");
@@ -68,7 +66,7 @@ public class LiveGoodlineParser
                     Element articleBodyBlock    = divTopic.getElementsByClass("topic-content").first();
                     String articleBody  = articleBodyBlock.text().replace("Читать дальше","");
 
-                    element             = new NewsElement(articleUrl, articleTitle, articleBody, imageLink, timeStr);
+                    element             = new NewsContainer(articleUrl, articleTitle, articleBody, imageLink, timeStr);
                     elements.add(element);
                 }
                 catch (Exception error)
@@ -105,5 +103,11 @@ public class LiveGoodlineParser
         return result;
     }
 
+    public static List<NewsBodyElementContainer>    parseNewsBody(String newsBody)
+    {
+        List<NewsBodyElementContainer> result   = new ArrayList<>();
+
+        return result;
+    }
 
 }

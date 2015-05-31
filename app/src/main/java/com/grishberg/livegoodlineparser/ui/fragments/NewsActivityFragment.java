@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
@@ -14,15 +13,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.text.Html;
-import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.style.ClickableSpan;
 import android.text.style.ImageSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -30,15 +28,15 @@ import android.widget.Toast;
 
 import com.grishberg.livegoodlineparser.R;
 
+import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetNewsTask;
+import com.grishberg.livegoodlineparser.data.containers.NewsBodyContainer;
+import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
+import com.grishberg.livegoodlineparser.data.interfaces.IGetNewsListener;
 import com.grishberg.livegoodlineparser.ui.activities.NewsActivity;
-import com.grishberg.livegoodlineparser.ui.bitmaputils.BitmapTransform;
 import com.grishberg.livegoodlineparser.data.IGetNewsResponseListener;
-import com.grishberg.livegoodlineparser.data.LiveGoodlineInfoDownloader;
 import com.grishberg.livegoodlineparser.ui.listeners.LinkMovementMethodExt;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.squareup.picasso.Picasso;
 
-import java.io.ObjectInputValidation;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,10 +46,13 @@ import com.grishberg.livegoodlineparser.ui.activities.ActivityImageGallery;
 /**
  * фрагмент который будет содержать новость.
  */
-public class NewsActivityFragment extends Fragment
+public class NewsActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks
+		, IGetNewsListener
 {
 	public static final String TAG = "LiveGL.NewsBody";
 	public static final int IMAGE_CLICK = 100;
+	private static final int	TASK_ID_GET_NEWS_BODY	= 2;
+
 
 	private HashMap<String, Drawable> imageCache = new HashMap<String, Drawable>();
 
@@ -63,7 +64,6 @@ public class NewsActivityFragment extends Fragment
 	private final int mSize = (int) Math.ceil(Math.sqrt(MAX_WIDTH * MAX_HEIGHT));
 	private ArrayList<String> mImageUrlList;
 	// загрузчик новостей
-	private LiveGoodlineInfoDownloader downloader;
 	private Handler mOnSpannClickHandler;
 	private ImageLoader	mImageLoader;
 
@@ -123,13 +123,11 @@ public class NewsActivityFragment extends Fragment
 		mTvNewsBody.setMovementMethod(new LinkMovementMethodExt(mOnSpannClickHandler
 				, new Class[] {ImageSpan.class, URLSpan.class}));
 
-
 		progressDlg = new ProgressDialog(getActivity());
 		progressDlg.setTitle("Ожидание");
 		progressDlg.setMessage("Идет загрузка новости...");
 		progressDlg.show();
 
-		downloader = new LiveGoodlineInfoDownloader(getActivity());
 		mImageUrlList = new ArrayList<String>();
 		getPageContent(newsUrl, date);
 		return view;
@@ -139,35 +137,47 @@ public class NewsActivityFragment extends Fragment
 	public void onStop()
 	{
 		super.onStop();
-		if(downloader != null) downloader.onStop();
 	}
 
 	//------------------- процедура фоновой загрузки страницы -------------------------
 	private void getPageContent(String url, Date date)
 	{
-		downloader.getNewsPage(url, date, new IGetNewsResponseListener()
-		{
-			@Override
-			public void onResponseGetNewsPage(String newsBody, boolean fromCache, int errorCode)
-			{
-				if (errorCode == 0)
-				{
-					doAfterNewsBodyReceived(newsBody, fromCache);
-				} else
-				{
-					progressDlg.dismiss();
-					Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
+		Bundle bundle	= new Bundle();
+		bundle.putString(GetNewsTask.PARAM_URL, url);
+		bundle.putLong(GetNewsTask.PARAM_DATE, date.getTime());
 
-				}
-			}
-		});
+		getLoaderManager().initLoader(TASK_ID_GET_NEWS_BODY, bundle, this);
+	}
+	//----------- результаты выполнения асинхронных методов
+	@Override
+	public void onLoadFinished(Loader loader, Object data)
+	{
+
+	}
+
+	@Override
+	public void onProgress(NewsBodyContainer progressResult)
+	{
+
+	}
+
+	@Override
+	public Loader onCreateLoader(int id, Bundle args)
+	{
+		return null;
+	}
+
+
+	@Override
+	public void onLoaderReset(Loader loader)
+	{
+
 	}
 
 	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache)
 	{
 		try
 		{
-
 			// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
 			if (fromCache == false)
 			{

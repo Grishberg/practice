@@ -13,11 +13,21 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class TopicListActivity extends AppCompatActivity
 {
 	public static final String LOG_TAG = "LiveGL.mainActivity";
-	private Intent lastIntent = null;
+
+	public interface IActionsListener
+	{
+		boolean onBackPressed();
+		void	onNewIntent(Intent intent);
+	}
+
+	private List<IActionsListener> mListeners;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -25,6 +35,7 @@ public class TopicListActivity extends AppCompatActivity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_topic_list);
 
+		mListeners	= new ArrayList<>();
 		// UNIVERSAL IMAGE LOADER SETUP
 		DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
 				.cacheOnDisc(true).cacheInMemory(true)
@@ -41,36 +52,29 @@ public class TopicListActivity extends AppCompatActivity
 		// END - UNIVERSAL IMAGE LOADER SETUP
 	}
 
+	public void addListener(IActionsListener listener)
+	{
+		mListeners.add(listener);
+	}
+
+	public void removeListener(IActionsListener listener)
+	{
+		mListeners.remove(listener);
+	}
+
+
 	@Override
 	protected void onNewIntent(Intent intent)
 	{
 		super.onNewIntent(intent);
-		//TODO: поискать фрагмент с ID = topic_list_fragment и вызвать нужный метод
 		String action = intent.getAction();
-		if( action != null)
+		if( action.equals(TopicListActivityFragment.COMMAND_UPDATE_FROM_SERVICE) ||
+				action.equals(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE)	)
 		{
-			if( action.equals(TopicListActivityFragment.COMMAND_UPDATE_FROM_SERVICE))
+			for (IActionsListener listener : mListeners)
 			{
-				// обновить список новостей
-				// запустить обновление списка
-				lastIntent = intent;
-			}
-			else if( action.equals(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE))
-			{
-				lastIntent = intent;
-			}
-			else
-			{
-				lastIntent = null;
+				listener.onNewIntent(intent);
 			}
 		}
-	}
-	// вернуть последний интент и обнулить
-	public Intent getLastIntent()
-	{
-		if (lastIntent == null) return  null;
-		Intent resultIntent = (Intent)lastIntent.clone();
-		lastIntent			= null;
-		return resultIntent;
 	}
 }

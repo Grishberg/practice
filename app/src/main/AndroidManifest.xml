@@ -51,6 +51,7 @@
         <activity
             android:name=".ui.activities.ActivityImageGallery"
             android:label="@string/title_activity_image_gallery"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen"
             >
         </activity>
     </application>
