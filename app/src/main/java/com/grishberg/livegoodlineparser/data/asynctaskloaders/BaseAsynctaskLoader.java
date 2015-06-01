@@ -27,7 +27,7 @@ public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 		public void handleMessage(Message msg) {
 			if(msg.what == MSGCODE_MESSAGE){
 				if(msg.obj != null) {
-					publishProgress(msg.obj);
+					onUpdateProgress(msg.obj);
 				}
 			}
 		}
@@ -40,7 +40,7 @@ public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 	}
 
 	// отправить промежуточный результат в UI поток через Handle
-	protected void updateProgress(Object progressResult )
+	protected void publishProgress(Object progressResult )
 	{
 		Message message = mHandler.obtainMessage();
 		message.obj = progressResult;
@@ -49,7 +49,7 @@ public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 	}
 
 	// выполняемые действия в фоне
-	abstract protected void publishProgress( Object progressResult);
+	abstract protected void onUpdateProgress( Object progressResult);
 	abstract public void releaseListener();
 	abstract public void setListener(Object listener);
 }

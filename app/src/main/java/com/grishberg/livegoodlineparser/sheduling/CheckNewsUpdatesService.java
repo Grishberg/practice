@@ -71,9 +71,7 @@ public class CheckNewsUpdatesService extends IntentService
 			// парсинг полученной строки
 			List<NewsContainer> topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
 
-			Date date = mDbHelper.getMaxStoredDate();
-
-			if(date == null) { 	date = new Date(0); }
+			long date = mDbHelper.getMaxStoredDate();
 
 			boolean turnOnSound = true;
 			for(int i = topicListFromWeb.size()-1; i >= 0 ; i--)
@@ -140,7 +138,7 @@ public class CheckNewsUpdatesService extends IntentService
 		{
 			//COMMAND_OPEN_NEWS_FROM_SERVICE
 			notificationIntent.setAction(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE);
-			notificationIntent.putExtra(TopicListActivityFragment.NEWS_DATE_INTENT, topicList.get(0).getDate().getTime());
+			notificationIntent.putExtra(TopicListActivityFragment.NEWS_DATE_INTENT, topicList.get(0).getDate());
 			notificationIntent.putExtra(TopicListActivityFragment.NEWS_URL_INTENT, topicList.get(0).getUrl());
 			notificationIntent.putExtra(TopicListActivityFragment.NEWS_TITLE_INTENT, topicList.get(0).getTitle());
 			message = topicList.get(0).getTitle();

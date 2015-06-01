@@ -7,8 +7,16 @@
     <FrameLayout
         android:id="@+id/topic_list_fragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
         >
 
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/news_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
     </FrameLayout>
 </LinearLayout>

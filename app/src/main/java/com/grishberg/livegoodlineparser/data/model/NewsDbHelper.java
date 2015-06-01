@@ -143,12 +143,12 @@ public class NewsDbHelper extends SQLiteOpenHelper
 
 	public boolean storeTopicList(List<NewsContainer> topicList)
 	{
-		Date dt1 = getMaxStoredDate();
-		Date dt2 = getMinStoredDate();
+		long dt1 = getMaxStoredDate();
+		long dt2 = getMinStoredDate();
 
 		for (NewsContainer currentNews: topicList)
 		{
-			if(	dt1 == null ||
+			if(	dt1 == -1 ||
 					currentNews.compareToDate(dt1) > 0 ||
 					currentNews.compareToDate(dt2) < 0
 					)
@@ -170,7 +170,7 @@ public class NewsDbHelper extends SQLiteOpenHelper
 		contentValues.put(NEWS_COLUMN_TITLE,	newsElement.getTitle());
 		contentValues.put(NEWS_COLUMN_URL,		newsElement.getUrl());
 		contentValues.put(NEWS_COLUMN_BODY,		newsElement.getBody());
-		contentValues.put(NEWS_COLUMN_DATE, 	newsElement.getDate().getTime() );
+		contentValues.put(NEWS_COLUMN_DATE, 	newsElement.getDate());
 		contentValues.put(NEWS_COLUMN_IMAGEURL, newsElement.getImageLink());
 		contentValues.put(NEWS_COLUMN_ISDESCRIPTION, 1);
 		long status = db.insert(NEWS_TABLE_NAME, null, contentValues);
@@ -204,19 +204,15 @@ public class NewsDbHelper extends SQLiteOpenHelper
 	}
 
 	// максимальная дата новости в бд
-	public Date getMaxStoredDate()
+	public long getMaxStoredDate()
 	{
-		Date result = null;
+		long result = -1;
 		SQLiteDatabase db = this.getReadableDatabase();
 
 		Cursor rs = db.rawQuery("SELECT max( " + NEWS_COLUMN_DATE + " ) from " + NEWS_TABLE_NAME, null);
 		//TODO: проверить, может нет данных
 		rs.moveToFirst();
-		long lDate	= rs.getLong(0);
-		if(lDate > 0)
-		{
-			result = new Date(lDate);
-		}
+		result	= rs.getLong(0);
 		if (!rs.isClosed())
 		{
 			rs.close();
@@ -226,19 +222,16 @@ public class NewsDbHelper extends SQLiteOpenHelper
 	}
 
 	// минимальная дата новости в бд
-	private Date getMinStoredDate()
+	private long getMinStoredDate()
 	{
-		Date result = null;
+		long result = -1;
 		SQLiteDatabase db = this.getReadableDatabase();
 
 		Cursor rs = db.rawQuery("SELECT min( " + NEWS_COLUMN_DATE + " ) from " + NEWS_TABLE_NAME, null);
 		//TODO: проверить, может нет данных
 		rs.moveToFirst();
-		long lDate	= rs.getLong(0);
-		if(lDate > 0)
-		{
-			result = new Date(lDate);
-		}
+		result	= rs.getLong(0);
+
 		if (!rs.isClosed())
 		{
 			rs.close();

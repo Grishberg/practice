@@ -33,10 +33,11 @@ public class GetNewsTask extends BaseAsynctaskLoader
 	private Context mContext;
 	private long mDate;
 	private String mUrl;
-	public GetNewsTask(Context context, Bundle bundle)
+	public GetNewsTask(Context context, Bundle bundle,IGetNewsListener listener)
 	{
 		super(context);
 		mContext	= context;
+		mListener	= listener;
 		// прочитать параметры из bundle
 		if(bundle != null)
 		{
@@ -51,10 +52,9 @@ public class GetNewsTask extends BaseAsynctaskLoader
 		CachedNewsContainer cachedNewsBody	= null;
 		String webNewsBody					= null;
 		int errorCode						= 0;
-		//TODO: вернуть признак того, что это часть новости
-		cachedNewsBody	= mDbHelper.getNewsPage(mDate);
 
-		//использовать onProgressUpdate для вывода промежуточного результата из кэша
+		cachedNewsBody	= mDbHelper.getNewsPage(mDate);
+		//использовать publishProgress для вывода промежуточного результата из кэша
 		if(cachedNewsBody != null &&
 				cachedNewsBody.getBody() != null &&
 				cachedNewsBody.getBody().length() >0)
@@ -67,7 +67,7 @@ public class GetNewsTask extends BaseAsynctaskLoader
 			}
 			else
 			{
-				return cachedNewsBody.getBody();
+				return new NewsBodyContainer(cachedNewsBody.getBody(), errorCode);
 			}
 		}
 
@@ -106,7 +106,7 @@ public class GetNewsTask extends BaseAsynctaskLoader
 	}
 
 	@Override
-	protected void publishProgress(Object progressResult)
+	protected void onUpdateProgress(Object progressResult)
 	{
 		if(mListener != null)
 		{

@@ -2,6 +2,7 @@ package com.grishberg.livegoodlineparser.data.asynctaskloaders;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -10,6 +11,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
 import com.grishberg.livegoodlineparser.data.containers.TopicListContainer;
+import com.grishberg.livegoodlineparser.data.interfaces.IGetNewsListener;
 import com.grishberg.livegoodlineparser.data.interfaces.IGetTopilistListener;
 import com.grishberg.livegoodlineparser.data.livegoodlineparser.LiveGoodlineParser;
 import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
@@ -23,43 +25,42 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by G on 29.05.15.
  */
-public class GetTopicListTask extends BaseAsynctaskLoader
-{
-	public static final String	mainUrl	= "http://live.goodline.info/guest";
-	public static final String	PARAM_DATE	= "paramDate";
-	public static final String	PARAM_PAGE	= "paramPage";
-	public static final String	PARAM_INSERT_TO_TOP	= "paramInserToTop";
+public class GetTopicListTask extends BaseAsynctaskLoader {
+	public static final String TAG = "LiveGL.TopicLoader";
+	public static final String mainUrl = "http://live.goodline.info/guest";
+	public static final String PARAM_DATE = "paramDate";
+	public static final String PARAM_PAGE = "paramPage";
+	public static final String PARAM_INSERT_TO_TOP = "paramInserToTop";
 
 
-	private Context	mContext;
+	private Context mContext;
 	private IGetTopilistListener mListener;
 	private long mDate;
 	private int mPage;
 	private boolean mInsertToTop;
-	public GetTopicListTask(Context context, Bundle bundle)
-	{
+
+	public GetTopicListTask(Context context, Bundle bundle, IGetTopilistListener listener) {
 		super(context);
-		mContext	= context;
+		mContext = context;
+		mListener = listener;
 		// прочитать параметры из bundle
-		mDate	= bundle.getLong(PARAM_DATE,0);
-		mPage	= bundle.getInt(PARAM_PAGE, 1);
+		mDate = bundle.getLong(PARAM_DATE, 0);
+		mPage = bundle.getInt(PARAM_PAGE, 1);
 		mInsertToTop = bundle.getBoolean(PARAM_INSERT_TO_TOP);
 
 	}
 
 	@Override
-	public Object loadInBackground()
-	{
-		int errorCode		= 0;
-		List<NewsContainer> topicListFromCache	= null;
-		List<NewsContainer> topicListFromWeb	= null;
+	public Object loadInBackground() {
+		int errorCode = 0;
+		List<NewsContainer> topicListFromCache = null;
+		List<NewsContainer> topicListFromWeb = null;
 
-		topicListFromCache	= mDbHelper.getTopicList(mDate);
+		topicListFromCache = mDbHelper.getTopicList(mDate);
 
 		//использовать onProgressUpdate для вывода промежуточного результата из кэша
-		if(topicListFromCache != null && topicListFromCache.size() > 0)
-		{
-			publishProgress( new TopicListContainer(topicListFromCache, errorCode, mInsertToTop));
+		if (topicListFromCache != null && topicListFromCache.size() > 0) {
+			publishProgress(new TopicListContainer(topicListFromCache, errorCode, mInsertToTop));
 		}
 
 		// отправка запроса на закачку страницы
@@ -67,21 +68,19 @@ public class GetTopicListTask extends BaseAsynctaskLoader
 		//TODO: если статьи добавляются сверху, в цикле добавлять, пока дата любой из статьи
 		//		на странице не равна date
 		// скорректировать URL в зависимости от страницы
-		if(mPage > 1)
-		{
+		if (mPage > 1) {
 			url = String.format("%s/page%d/", mainUrl, mPage);
 		}
 
 		// синхронная загрузка из Volley
-		RequestQueue queue			= Volley.newRequestQueue(mContext);
+		RequestQueue queue = Volley.newRequestQueue(mContext);
 		RequestFuture<String> futureRequest = RequestFuture.newFuture();
-		StringRequest getRequest	= new StringRequest(Request.Method.GET
+		StringRequest getRequest = new StringRequest(Request.Method.GET
 				, url
 				, futureRequest, futureRequest);
 		queue.add(getRequest);
 
-		try
-		{
+		try {
 			String response = futureRequest.get(TopicListActivityFragment.VOLLEY_SYNC_TIMEOUT, TimeUnit.SECONDS);
 			topicListFromWeb = LiveGoodlineParser.getNewsPerPage(response);
 
@@ -100,8 +99,7 @@ public class GetTopicListTask extends BaseAsynctaskLoader
 			// сохранить кэш в базу
 			mDbHelper.storeTopicList(topicListFromWeb);
 			// спарсить полученную строку
-		} catch (InterruptedException e)
-		{
+		} catch (InterruptedException e) {
 			errorCode = -1;
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -117,30 +115,26 @@ public class GetTopicListTask extends BaseAsynctaskLoader
 	}
 
 	@Override
-	protected void publishProgress(Object progressResult)
-	{
-		if(mListener != null)
-		{
-			mListener.onProgress((TopicListContainer)progressResult);
+	protected void onUpdateProgress(Object progressResult) {
+		if (mListener != null) {
+			mListener.onProgress((TopicListContainer) progressResult);
 		}
 	}
 
 	@Override
-	public void setListener(Object listener)
-	{
-		mListener	= (IGetTopilistListener) listener;
+	public void setListener(Object listener) {
+		mListener = (IGetTopilistListener) listener;
 	}
 
 	@Override
-	public void releaseListener()
-	{
-		mListener	= null;
+	public void releaseListener() {
+		mListener = null;
 	}
 
 	@Override
-	protected void onStopLoading()
-	{
+	protected void onStopLoading() {
+		Log.d(TAG, "onStopLoading");
 		super.onStopLoading();
-		mListener	= null;
+		mListener = null;
 	}
 }
