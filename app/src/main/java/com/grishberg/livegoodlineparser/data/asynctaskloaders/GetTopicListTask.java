@@ -61,7 +61,7 @@ public class GetTopicListTask extends BaseAsynctaskLoader {
 
 		//использовать onProgressUpdate для вывода промежуточного результата из кэша
 		if (topicListFromCache != null && topicListFromCache.size() > 0) {
-			publishProgress(new TopicListContainer(topicListFromCache, errorCode, mInsertToTop));
+			publishProgress(new TopicListContainer(topicListFromCache, errorCode, mInsertToTop, mPage));
 		}
 
 		// отправка запроса на закачку страницы
@@ -112,7 +112,7 @@ public class GetTopicListTask extends BaseAsynctaskLoader {
 		}
 
 		// подгрузить в фоне из сети
-		return new TopicListContainer(topicListFromWeb, errorCode, mInsertToTop);
+		return new TopicListContainer(topicListFromWeb, errorCode, mInsertToTop, mPage);
 	}
 
 	@Override

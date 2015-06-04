@@ -57,6 +57,7 @@ public class TopicListActivityFragment extends Fragment implements
 	public static final String COMMAND_OPEN_NEWS_FROM_SERVICE = "commandOpenNewsFromCheckNewsService";
 	public static final String SAVE_STATE_TOPIC_LIST	= "saveStateTopicList";
 	public static final String SAVE_STATE_TOP_ELEMENT_INDEX	= "saveStateTopElementIndex";
+	public static final String SAVE_STATE_PAGE	= "saveStatePage";
 
 	public static final String NEWS_URL_INTENT = "currentNewsUrl";
 	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
@@ -84,6 +85,7 @@ public class TopicListActivityFragment extends Fragment implements
 	private CustomListAdapter mAdapter;
 	private ArrayList<NewsContainer> mElements;
 	private int mTopElementOffset;
+	private int mCurrentPage;
 
 	private AlarmReceiver mAlarmReceiver;
 	private boolean mDownloadingPage = false;
@@ -102,6 +104,7 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
+		Log.d(TAG, "onAttach");
 		if (activity instanceof ITopicListActivityActions) {
 			mListener = (ITopicListActivityActions) activity;
 			mListener.onRegister(this);
@@ -114,8 +117,29 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onDetach() {
 		super.onDetach();
+		Log.d(TAG, "onDetach");
 		mListener.onUnregister(this);
 		mListener = null;
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		Log.d(TAG, "onCreate");
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		Log.d(TAG, "onDestroy");
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		Log.d(TAG, "onActivityCreated");
+
 	}
 
 	@Override
@@ -125,25 +149,31 @@ public class TopicListActivityFragment extends Fragment implements
 		setHasOptionsMenu(true);
 		Log.d(TAG, "onCreatrView");
 		mDownloadingPage	= false;
-		if (savedInstanceState != null) {
-			// восстановление после поворота
-			//загрузить список новостей
-			mElements	= savedInstanceState.getParcelableArrayList(SAVE_STATE_TOPIC_LIST);
-			// восстановить позицию на экране
-			mTopElementOffset	= savedInstanceState.getInt(SAVE_STATE_TOP_ELEMENT_INDEX);
-		} else {
-			mFirstRun = true;
-		}
 
 		// для пул даун ту рефреш
 		mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.refresh);
 		mSwipeRefreshLayout.setOnRefreshListener(this);
 
+		// отображение прогрессбара
+		mProgressBar = (ProgressBar) view.findViewById(R.id.loading_spinner);
+
 		//настройка list view
 		mNews = (ListView) view.findViewById(R.id.listView);
 
+		mElements = new ArrayList<NewsContainer>();
+		if (savedInstanceState != null) {
+			// восстановление после поворота
+			mElements			= savedInstanceState.getParcelableArrayList(SAVE_STATE_TOPIC_LIST);
+			mTopElementOffset	= savedInstanceState.getInt(SAVE_STATE_TOP_ELEMENT_INDEX);
+			mCurrentPage		= savedInstanceState.getInt(SAVE_STATE_PAGE);
+			mProgressBar.setVisibility(View.GONE);
+		} else {
+			mFirstRun = true;
+			// скрыть список новостей
+			mSwipeRefreshLayout.setVisibility(View.GONE);
+		}
 		//----------------- реализация inifinite scroll ------------------------
-		mNews.setOnScrollListener(new InfinityScrollListener(newsCountPerPage) {
+		mNews.setOnScrollListener(new InfinityScrollListener(newsCountPerPage, mCurrentPage) {
 			// событие возникает во время того как скроллинг дойдет до конца
 			@Override
 			public void loadMore(int page, int totalItemsCount) {
@@ -152,23 +182,15 @@ public class TopicListActivityFragment extends Fragment implements
 			}
 		});
 
-		mElements = new ArrayList<NewsContainer>();
 		mAdapter = new CustomListAdapter(view.getContext(), mElements);
 		mNews.setAdapter(mAdapter);
 
 		// обработка нажатия на элемент списка
 		mNews.setOnItemClickListener(this);
 
-		// скрыть список новостей
-		mSwipeRefreshLayout.setVisibility(View.GONE);
-
 		// настройка анимации перехода
 		mShortAnimationDuration = getResources().getInteger(
 				android.R.integer.config_shortAnimTime);
-
-
-		// отображение прогрессбара
-		mProgressBar = (ProgressBar) view.findViewById(R.id.loading_spinner);
 
 		mProgressDlg = new ProgressDialog(getActivity());
 		mProgressDlg.setTitle("Ожидание");
@@ -185,6 +207,7 @@ public class TopicListActivityFragment extends Fragment implements
 		//TODO: сохранить список новостей и верхнюю позицию
 		outState.putParcelableArrayList(SAVE_STATE_TOPIC_LIST, mElements);
 		outState.putInt(SAVE_STATE_TOP_ELEMENT_INDEX, mNews.getFirstVisiblePosition());
+		outState.putInt(SAVE_STATE_PAGE, mCurrentPage);
 	}
 
 	public boolean onBackPressed() {
@@ -217,7 +240,6 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onResume() {
 		super.onResume();
-
 		if (mFirstRun) {
 			mFirstRun = false;
 			// фоновая загрузка первой страницы
@@ -225,8 +247,6 @@ public class TopicListActivityFragment extends Fragment implements
 		} else {
 			// восстановление при повороте экрана
 			mNews.setSelection(mTopElementOffset);
-			//Loader loader	= getLoaderManager().initLoader(TASK_ID_GET_TOPIC_LIST, null, this);
-			//((GetTopicListTask)loader).setListener(this);
 		}
 	}
 
@@ -302,7 +322,8 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onProgress(TopicListContainer progressResult) {
 		mDownloadingPage = false;
-		doAfterTopicListReceived(progressResult.getNewsList(), progressResult.isInsertToTop(), true);
+		doAfterTopicListReceived(progressResult.getNewsList(), progressResult.isInsertToTop()
+				, progressResult.getPage(), true);
 	}
 
 	@Override
@@ -325,6 +346,11 @@ public class TopicListActivityFragment extends Fragment implements
 		return loader;
 	}
 
+	/**
+	 * event when AsyncTasl Loader complite work
+	 * @param loader reference to loader object
+	 * @param data - received data TopicListContainer
+	 */
 	@Override
 	public void onLoadFinished(Loader loader, Object data) {
 		TopicListContainer result = (TopicListContainer) data;
@@ -340,7 +366,7 @@ public class TopicListActivityFragment extends Fragment implements
 			}
 			Toast.makeText(getActivity(), "Неудачная попытка соединиться с сервером.", Toast.LENGTH_SHORT).show();
 		} else {
-			doAfterTopicListReceived(result.getNewsList(), result.isInsertToTop(), false);
+			doAfterTopicListReceived(result.getNewsList(), result.isInsertToTop(), result.getPage(), false);
 		}
 		mProgressDlg.dismiss();
 	}
@@ -352,7 +378,7 @@ public class TopicListActivityFragment extends Fragment implements
 	//------------------------------------------------------
 
 	private void doAfterTopicListReceived(List<NewsContainer> topicList
-			, boolean insertToTop, boolean fromCache) {
+			, boolean insertToTop, int page, boolean fromCache) {
 
 		boolean dataChanged = false;
 		if (insertToTop) {
@@ -411,6 +437,7 @@ public class TopicListActivityFragment extends Fragment implements
 		}
 		// если были изменения в данных - обновить ListView
 		if (dataChanged) {
+			mCurrentPage	= page;
 			mAdapter.notifyDataSetChanged();
 		}
 		// отключаем прогрессбар
@@ -435,7 +462,6 @@ public class TopicListActivityFragment extends Fragment implements
 		inflater.inflate(R.menu.menu_topic_list, menu);
 		super.onCreateOptionsMenu(menu, inflater);
 	}
-
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {

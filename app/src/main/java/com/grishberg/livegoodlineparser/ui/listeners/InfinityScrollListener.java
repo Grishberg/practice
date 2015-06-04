@@ -14,9 +14,10 @@ public abstract class InfinityScrollListener implements AbsListView.OnScrollList
     private boolean isLoading = true;
 
 
-    public InfinityScrollListener(int bufferItemCount)
+    public InfinityScrollListener(int bufferItemCount, int currentPage)
     {
-        this.bufferItemCount = bufferItemCount;
+        this.bufferItemCount    = bufferItemCount;
+        this. currentPage       = currentPage;
     }
 
     public abstract void loadMore(int page, int totalItemsCount);

@@ -15,7 +15,7 @@
         android:layout_width="@dimen/news_cell_image_size"
         android:layout_height="@dimen/news_cell_image_size"
         android:layout_gravity="center"
-        android:scaleType="center"
+        android:scaleType="fitCenter"
         android:visibility="gone"/>
     <!-- title -->
     <LinearLayout

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
@@ -29,13 +30,14 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 	public static final String TAG = "LiveGL.mainActivity";
 
 	private ArrayList<ITopicListFragmentActions> mFragments;
-	//TopicListActivityFragment mTopicListFragment;
+	TopicListActivityFragment mTopicListFragment;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		Log.d(TAG, "onCreate before super");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_topic_list);
-
+		Log.d(TAG, "onCreate post super");
 		// UNIVERSAL IMAGE LOADER SETUP
 		DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
 				.cacheOnDisc(true).cacheInMemory(true)
@@ -54,24 +56,35 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 		mFragments	= new ArrayList<>();
 		// creating fragments
 		// получим экземпляр FragmentTransaction из нашей Activity
-		TopicListActivityFragment topicListFragment = TopicListActivityFragment.newInstance();
+		if(savedInstanceState == null) {
+			mTopicListFragment = TopicListActivityFragment.newInstance();
 
-		FragmentTransaction transaction =  getSupportFragmentManager()
-				.beginTransaction();
+			FragmentTransaction transaction = getSupportFragmentManager()
+					.beginTransaction();
 
-		// add topic list fragment
+			// add topic list fragment
 
-		transaction.add(R.id.topic_list_fragment, topicListFragment
-				, TopicListActivityFragment.class.getName());
+			transaction.add(R.id.topic_list_fragment, mTopicListFragment
+					, TopicListActivityFragment.class.getName());
 
-		// if current layout file contains framelayout for detail news fragment, show news fragment
-		FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
-		if (newsLayout != null) {
-			NewsActivityFragment newsFragment = new NewsActivityFragment();
-			transaction.replace(newsLayout.getId(), newsFragment
-					, NewsActivityFragment.class.getName());
+			// if current layout file contains framelayout for detail news fragment, show news fragment
+			FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
+			if (newsLayout != null) {
+				NewsActivityFragment newsFragment = new NewsActivityFragment();
+				transaction.replace(newsLayout.getId(), newsFragment
+						, NewsActivityFragment.class.getName());
+			}
+			transaction.commit();
+		} else {
+			mTopicListFragment	=  (TopicListActivityFragment) getSupportFragmentManager()
+					.findFragmentByTag(TopicListActivityFragment.class.getName());
 		}
-		transaction.commit();
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		Log.d(TAG, "onDestroy");
 	}
 
 	/**
@@ -98,9 +111,9 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 		FragmentManager fragmentManager = getSupportFragmentManager();
 
 		// if topic list fragment are visible, do default action in back pressed
-		TopicListActivityFragment topicListActivityFragment =
-				(TopicListActivityFragment) fragmentManager.findFragmentByTag(TopicListActivityFragment.class.getName());
-		if (topicListActivityFragment.isVisible()) {
+		//TopicListActivityFragment topicListActivityFragment =
+		//		(TopicListActivityFragment) fragmentManager.findFragmentByTag(TopicListActivityFragment.class.getName());
+		if (mTopicListFragment.isVisible()) {
 			super.onBackPressed();
 
 		} else {
@@ -110,7 +123,7 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 			if (newsActivityFragment != null) {
 				FragmentTransaction transaction = fragmentManager.beginTransaction()
 						.remove(newsActivityFragment);
-				transaction.show(topicListActivityFragment);
+				transaction.show(mTopicListFragment);
 				transaction.commit();
 			}
 		}
@@ -122,8 +135,8 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 		NewsActivityFragment newsActivityFragment = NewsActivityFragment.newInstance(title, url, date);
 		FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
 
-		TopicListActivityFragment topicListActivityFragment =
-				(TopicListActivityFragment) getSupportFragmentManager().findFragmentByTag(TopicListActivityFragment.class.getName());
+		//TopicListActivityFragment topicListActivityFragment =
+		//		(TopicListActivityFragment) getSupportFragmentManager().findFragmentByTag(TopicListActivityFragment.class.getName());
 
 		// если в текущей разметке есть секция под новость, отображаем второй фрагмент
 		FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
@@ -133,7 +146,7 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 					, NewsActivityFragment.class.getName());
 		} else {
 			// заменить фрагмент со списком на фрагмент с новостью
-			fragmentTransaction.hide(topicListActivityFragment);
+			fragmentTransaction.hide(mTopicListFragment);
 			fragmentTransaction.add(R.id.topic_list_fragment, newsActivityFragment
 					, NewsActivityFragment.class.getName());
 		}

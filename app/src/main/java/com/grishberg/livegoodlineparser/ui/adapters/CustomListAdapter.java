@@ -59,7 +59,7 @@ public class CustomListAdapter extends BaseAdapter
     {
         final ViewHolder holder;
 
-        // setup ViewHolder for fast finding
+        // setup ViewHolder for fast finding view-elements
         if (convertView == null) {
             convertView = mInflater.inflate(R.layout.tableview_cell, parent, false);
             holder  = new ViewHolder();
