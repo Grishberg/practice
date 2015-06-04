@@ -13,16 +13,19 @@ import com.grishberg.livegoodlineparser.data.model.NewsDbHelper;
 /**
  * Created by G on 29.05.15.
  */
+
+/**
+ * jlkjlasd
+ */
 public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 {
 	public static final int	CODE_ERROR		= -1;
 	public static final String PARAM_ID		= "paramId";
 	public static final String BASE_TAG		= "AsyncLoader";
 	public static final int MSGCODE_MESSAGE	= 100;
-
 	protected NewsDbHelper 			mDbHelper;
 
-
+	// Hndler for calling onUpdateProgress method in UI thread
 	private final Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if(msg.what == MSGCODE_MESSAGE){
@@ -39,7 +42,10 @@ public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 		mDbHelper = new NewsDbHelper(context);
 	}
 
-	// отправить промежуточный результат в UI поток через Handle
+	/**
+	 * post result for update progress in UI while task's thread is running
+	 * @param progressResult any object to retrive in UI thread
+	 */
 	protected void publishProgress(Object progressResult )
 	{
 		Message message = mHandler.obtainMessage();
@@ -48,8 +54,15 @@ public abstract class BaseAsynctaskLoader extends AsyncTaskLoader
 		message.sendToTarget();
 	}
 
-	// выполняемые действия в фоне
+	/**
+	 * method calls in UI thread
+	 * @param progressResult - result for return in UI thread
+	 */
 	abstract protected void onUpdateProgress( Object progressResult);
-	abstract public void releaseListener();
+
+	/**
+	 * set listener for update progress in UI thread
+	 * @param listener
+	 */
 	abstract public void setListener(Object listener);
 }

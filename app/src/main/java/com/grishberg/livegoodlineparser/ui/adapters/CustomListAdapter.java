@@ -19,30 +19,32 @@ import java.util.List;
 
 /**
  * Created by g on 06.05.15.
+ * ListView adapter for news topic list
  */
 public class CustomListAdapter extends BaseAdapter
 {
-    Context context;
-    private List<NewsContainer>   items;
-    private LayoutInflater      inflater;
+    Context mContext;
+    private List<NewsContainer> mItems;
+    private LayoutInflater      mInflater;
     private Picasso             mPicasso;
+
     public CustomListAdapter(Context context,List<NewsContainer> elements)
     {
-        this.items          = elements;
-        this.context        = context;
-        inflater            = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mPicasso            = Picasso.with(context.getApplicationContext());
+        mItems          = elements;
+        mContext        = context;
+        mInflater       = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mPicasso        = Picasso.with(context.getApplicationContext());
     }
     @Override
     public int getCount()
     {
-        return items.size();
+        return mItems.size();
     }
 
     @Override
     public Object getItem(int location)
     {
-        return items.get(location);
+        return mItems.get(location);
     }
 
     @Override
@@ -51,54 +53,67 @@ public class CustomListAdapter extends BaseAdapter
         return position;
     }
 
-    // пункт списка
+    // draw news topic list element
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        // используем созданные, но не используемые view
-        View view = convertView;
-        if (view == null)
-        {
-            view = inflater.inflate(R.layout.tableview_cell, parent, false);
+        final ViewHolder holder;
+
+        // setup ViewHolder for fast finding
+        if (convertView == null) {
+            convertView = mInflater.inflate(R.layout.tableview_cell, parent, false);
+            holder  = new ViewHolder();
+            holder.tvTitle  = (TextView) convertView.findViewById(R.id.tvTitle);
+            holder.tvDate   = (TextView) convertView.findViewById(R.id.tvDate);
+            holder.imgIcon  = (ImageView) convertView.findViewById(R.id.thumbnail);
+            holder.progressBar  = (ProgressBar) convertView.findViewById(R.id.icon_loading_spinner);
+            convertView.setTag(holder);
+        } else {
+            holder  = (ViewHolder)  convertView.getTag();
         }
 
-        NewsContainer p = (NewsContainer)getItem(position);
+        NewsContainer currentNews = (NewsContainer)getItem(position);
 
-        // заполняем View
-        ((TextView) view.findViewById(R.id.tvTitle)).setText(p.getTitle());
-        ((TextView) view.findViewById(R.id.tvDate)).setText(p.getDateStr());
-        final ProgressBar progressBar   = (ProgressBar) view.findViewById(R.id.icon_loading_spinner);
-        final ImageView img             = (ImageView) view.findViewById(R.id.thumbnail);
-        //img.setVisibility(View.GONE);
+        // fill viewholder with data
+        holder.tvTitle.setText(currentNews.getTitle());
+        holder.tvDate.setText(currentNews.getDateStr());
 
-        if(p.getImageLink().length() > 0)
-        {
-            mPicasso.load(p.getImageLink()).transform(new CircleTransform()).into(img, new Callback()
-            {
-                @Override
-                public void onSuccess()
-                {
-                    img.setVisibility(View.VISIBLE);
-                    progressBar.setVisibility(View.GONE);
-                }
+        // async download image from url src and transform into circle shape
+        if(currentNews.getImageLink().length() > 0) {
+            mPicasso.load(currentNews.getImageLink())
+                    .resizeDimen(R.dimen.news_cell_image_size, R.dimen.news_cell_image_size)
+                    .transform(new CircleTransform())
+                    .into(holder.imgIcon, new Callback() {
+                        @Override
+                        public void onSuccess() {
+                            holder.imgIcon.setVisibility(View.VISIBLE);
+                            holder.progressBar.setVisibility(View.GONE);
+                        }
 
-                @Override
-                public void onError()
-                {
-                    img.setVisibility(View.VISIBLE);
-                    progressBar.setVisibility(View.GONE);
+                        @Override
+                        public void onError() {
+                            holder.imgIcon.setVisibility(View.VISIBLE);
+                            holder.progressBar.setVisibility(View.GONE);
 
-                }
-            });
+                        }
+                    });
         }
-        else
-        {
-            // отображать пустую картинку для таких случаев
-            progressBar.setVisibility(View.GONE);
-            img.setVisibility(View.VISIBLE);
-            img.setImageResource(R.drawable.goodlinelogomini);
-
+        else {
+            //show empty picture if image url does not exists
+            holder.progressBar.setVisibility(View.GONE);
+            holder.imgIcon.setVisibility(View.VISIBLE);
+            holder.imgIcon.setImageResource(R.drawable.goodlinelogomini);
         }
-        return view;
+        return convertView;
+    }
+
+    /**
+     * helper class - ViewHolder
+     */
+    private static class ViewHolder{
+        TextView    tvTitle;
+        TextView    tvDate;
+        ImageView   imgIcon;
+        ProgressBar progressBar;
     }
 }

@@ -28,7 +28,8 @@ import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetTopicListTask;
 import com.grishberg.livegoodlineparser.data.containers.NewsContainer;
 import com.grishberg.livegoodlineparser.data.containers.TopicListContainer;
 import com.grishberg.livegoodlineparser.data.interfaces.IGetTopilistListener;
-import com.grishberg.livegoodlineparser.ui.listeners.ITopicItemClickListener;
+import com.grishberg.livegoodlineparser.ui.listeners.ITopicListActivityActions;
+import com.grishberg.livegoodlineparser.ui.listeners.ITopicListFragmentActions;
 import com.grishberg.livegoodlineparser.ui.listeners.InfinityScrollListener;
 import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.ui.adapters.CustomListAdapter;
@@ -41,44 +42,48 @@ import java.util.List;
 
 
 /**
- * A placeholder fragment containing a simple view.
+ * fragment shows news topic list
  */
 public class TopicListActivityFragment extends Fragment implements
 		LoaderManager.LoaderCallbacks
 		, SwipeRefreshLayout.OnRefreshListener
 		, AdapterView.OnItemClickListener
-		, IGetTopilistListener
-		, IClearDbListener {
+		, ITopicListFragmentActions
+		, IClearDbListener
+		, IGetTopilistListener {
 
 	public static final String TAG = "LiveGL.TL";
 	public static final String COMMAND_UPDATE_FROM_SERVICE = "commandUpdateFromCheckNewsService";
 	public static final String COMMAND_OPEN_NEWS_FROM_SERVICE = "commandOpenNewsFromCheckNewsService";
-
+	public static final String SAVE_STATE_TOPIC_LIST	= "saveStateTopicList";
+	public static final String SAVE_STATE_TOP_ELEMENT_INDEX	= "saveStateTopElementIndex";
 
 	public static final String NEWS_URL_INTENT = "currentNewsUrl";
 	public static final String NEWS_TITLE_INTENT = "currentNewsTitle";
 	public static final String NEWS_DATE_INTENT = "currentNewsDate";
 
+	// service update duration in milliseconds
 	public static final int UPDATE_NEWS_DURATION = 30 * 60 * 1000;
 	public static final int VOLLEY_SYNC_TIMEOUT = 20;
 
 	private static final int TASK_ID_GET_TOPIC_LIST = 1;
 	private static final int TASK_ID_CLEAR_CACHE = 3;
 
+	// news count per page
 	public static final int newsCountPerPage = 10;
 
 	private boolean mFirstRun;
+
 	// слушатель реакции на выбор новости из списка
-	private ITopicItemClickListener mTopicItemClickListener;
+	private ITopicListActivityActions mListener;
 	private ProgressDialog mProgressDlg;
 
 	private ListView mNews;
 	private ProgressBar mProgressBar;
 	private SwipeRefreshLayout mSwipeRefreshLayout;
 	private CustomListAdapter mAdapter;
-	private List<NewsContainer> mElements;
-
-	// загрузчик новостей
+	private ArrayList<NewsContainer> mElements;
+	private int mTopElementOffset;
 
 	private AlarmReceiver mAlarmReceiver;
 	private boolean mDownloadingPage = false;
@@ -86,7 +91,6 @@ public class TopicListActivityFragment extends Fragment implements
 
 	public static TopicListActivityFragment newInstance() {
 		TopicListActivityFragment instance = new TopicListActivityFragment();
-
 		Bundle args = new Bundle();
 		instance.setArguments(args);
 		return instance;
@@ -98,8 +102,9 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		if (activity instanceof ITopicItemClickListener) {
-			mTopicItemClickListener = (ITopicItemClickListener) activity;
+		if (activity instanceof ITopicListActivityActions) {
+			mListener = (ITopicListActivityActions) activity;
+			mListener.onRegister(this);
 		} else {
 			throw new ClassCastException(activity.toString()
 					+ " must implement ITopicItemClickListener");
@@ -109,7 +114,8 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onDetach() {
 		super.onDetach();
-		mTopicItemClickListener = null;
+		mListener.onUnregister(this);
+		mListener = null;
 	}
 
 	@Override
@@ -121,8 +127,10 @@ public class TopicListActivityFragment extends Fragment implements
 		mDownloadingPage	= false;
 		if (savedInstanceState != null) {
 			// восстановление после поворота
-			//TODO: загрузить список новостей
+			//загрузить список новостей
+			mElements	= savedInstanceState.getParcelableArrayList(SAVE_STATE_TOPIC_LIST);
 			// восстановить позицию на экране
+			mTopElementOffset	= savedInstanceState.getInt(SAVE_STATE_TOP_ELEMENT_INDEX);
 		} else {
 			mFirstRun = true;
 		}
@@ -175,13 +183,15 @@ public class TopicListActivityFragment extends Fragment implements
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		//TODO: сохранить список новостей и верхнюю позицию
-		//outState.putParcelableArrayList(mElements);
+		outState.putParcelableArrayList(SAVE_STATE_TOPIC_LIST, mElements);
+		outState.putInt(SAVE_STATE_TOP_ELEMENT_INDEX, mNews.getFirstVisiblePosition());
 	}
 
 	public boolean onBackPressed() {
 		return false;
 	}
 
+	@Override
 	public void onNewIntent(Intent intent) {
 		String action = intent.getAction();
 		if (action != null) {
@@ -198,7 +208,7 @@ public class TopicListActivityFragment extends Fragment implements
 				String url		= intent.getStringExtra(TopicListActivityFragment.NEWS_URL_INTENT);
 				long date		= intent.getLongExtra(TopicListActivityFragment.NEWS_DATE_INTENT, 0);
 				String title	= intent.getStringExtra(TopicListActivityFragment.NEWS_TITLE_INTENT);
-				mTopicItemClickListener.onTopicListItemClicked(title, url, date);
+				mListener.onTopicListItemClicked(title, url, date);
 			}
 			Log.d(TAG, " onResume, action = " + action);
 		}
@@ -214,6 +224,7 @@ public class TopicListActivityFragment extends Fragment implements
 			getPageContent(1, false);
 		} else {
 			// восстановление при повороте экрана
+			mNews.setSelection(mTopElementOffset);
 			//Loader loader	= getLoaderManager().initLoader(TASK_ID_GET_TOPIC_LIST, null, this);
 			//((GetTopicListTask)loader).setListener(this);
 		}
@@ -223,7 +234,7 @@ public class TopicListActivityFragment extends Fragment implements
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		NewsContainer currentNews = (NewsContainer) mAdapter.getItem(position);
-		mTopicItemClickListener.onTopicListItemClicked(currentNews.getTitle(), currentNews.getUrl()
+		mListener.onTopicListItemClicked(currentNews.getTitle(), currentNews.getUrl()
 				, currentNews.getDate());
 	}
 

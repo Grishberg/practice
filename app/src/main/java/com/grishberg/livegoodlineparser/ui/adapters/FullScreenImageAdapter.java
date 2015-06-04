@@ -1,8 +1,5 @@
 package com.grishberg.livegoodlineparser.ui.adapters;
 
-/**
- * Created by Сергей Балдин on 26.05.15.
- */
 import java.util.ArrayList;
 
 import android.content.res.Resources;
@@ -38,109 +35,31 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-/**
- * Created by Балдин Сергей on 26.05.2015.
- */
-/*
-public class FullScreenImageAdapter extends PagerAdapter {
-
-	private Activity _activity;
-	private ArrayList<String> mImageLinks;
-	private LayoutInflater inflater;
-	private int mScreenWidth, mScreenHeight;
-	private int mSize;
-
-	// constructor
-	public FullScreenImageAdapter(Activity activity,
-								  ArrayList<String> imageLinks) {
-		this._activity		= activity;
-		this.mImageLinks 	= imageLinks;
-
-		// запомнить размеры окна для масштабирования измображения
-		Point size			= new Point();
-		this._activity.getWindowManager().getDefaultDisplay().getSize(size);
-		mScreenWidth		= size.x;
-		mScreenHeight		= size.y;
-		mSize = (int) Math.ceil(Math.sqrt(mScreenWidth * mScreenHeight));
-	}
-
-	@Override
-	public int getCount() {
-		return this.mImageLinks.size();
-	}
-
-	@Override
-	public boolean isViewFromObject(View view, Object object) {
-		return view == ((RelativeLayout) object);
-	}
-
-	@Override
-	public Object instantiateItem(ViewGroup container, int position) {
-		ImageView imgDisplay;
-
-		inflater = (LayoutInflater) _activity
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		View viewLayout = inflater.inflate(R.layout.image_gallery_item, container,
-				false);
-
-		imgDisplay = (ImageView) viewLayout.findViewById(R.id.imgDispImgGal);
-
-		String currentImageLink = mImageLinks.get(position);
-		try
-		{
-			Picasso.with(_activity).load(currentImageLink)
-					.transform(new BitmapTransform(mScreenWidth, mScreenHeight))
-					.resize(mSize, mSize).centerInside()
-					.into(imgDisplay);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		((ViewPager) container).addView(viewLayout);
-
-		return viewLayout;
-	}
-
-	@Override
-	public void destroyItem(ViewGroup container, int position, Object object) {
-		((ViewPager) container).removeView((RelativeLayout) object);
-
-	}
-}
-*/
 
 /**
  * Created by Балдин Сергей on 26.05.2015.
+ * Edited by Rylov Grigoriy
  */
 public class FullScreenImageAdapter extends PagerAdapter{
 
 	private static final String TAG = "LiveGL.FsAdapter";
-	private Activity _activity;
-	private ArrayList<String> mImageLinks;
-	private LayoutInflater inflater;
-	private TouchImageView mImgDisplay;
+	private Activity 			mActivity;
+	private ArrayList<String>	mImageUrls;
+	private TouchImageView		mImageContainer;
 
-	// для ресайза
 	private int mScreenWidth, mScreenHeight;
 	private int mSize;
 
-	public FullScreenImageAdapter(ActivityImageGallery activityImageGallery, ArrayList<String> imageLinksList, Resources resources) {
-		this._activity = activityImageGallery;
-		this.mImageLinks = imageLinksList;
-
-		// запомнить размеры окна для масштабирования измображения
-		Point size			= new Point();
-		this._activity.getWindowManager().getDefaultDisplay().getSize(size);
-		mScreenWidth		= size.x;
-		mScreenHeight		= size.y;
-		mSize = mScreenWidth < mScreenHeight? mScreenWidth: mScreenHeight;
-
+	public FullScreenImageAdapter(ActivityImageGallery activityImageGallery
+			, ArrayList<String> imageLinksList
+			, Resources resources) {
+		mActivity	= activityImageGallery;
+		mImageUrls	= imageLinksList;
 	}
 
 	@Override
 	public int getCount() {
-		return this.mImageLinks.size();
+		return mImageUrls.size();
 	}
 
 	@Override
@@ -151,25 +70,25 @@ public class FullScreenImageAdapter extends PagerAdapter{
 	@Override
 	public Object instantiateItem(ViewGroup container, int position) {
 
-		inflater = (LayoutInflater) _activity
+		LayoutInflater inflater = (LayoutInflater) mActivity
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		View viewLayout = inflater.inflate(R.layout.image_gallery_item, container,
-				false);
-
-		mImgDisplay = (TouchImageView) viewLayout.findViewById(R.id.imgDispImgGal);
-
-		loadImage( mImageLinks.get(position));
-
+		View viewLayout = inflater.inflate(R.layout.image_gallery_item, container, false);
+		mImageContainer = (TouchImageView) viewLayout.findViewById(R.id.imgDispImgGal);
+		loadImage( mImageUrls.get(position));
 		((ViewPager) container).addView(viewLayout);
-
 		return viewLayout;
 	}
 
+	/**
+	 * asynchronously load image in mImageContainer
+	 * @param url
+	 */
 	public void loadImage(String url)
 	{
 		ImageLoader imageLoader = ImageLoader.getInstance();
 		DisplayImageOptions options = new DisplayImageOptions.Builder().cacheInMemory(true)
 				.cacheOnDisc(true).resetViewBeforeLoading(true)
+						//TODO: chose image resources for show in different state
 				//.showImageForEmptyUri(fallback)
 				//.showImageOnFail(fallback)
 				//.showImageOnLoading(fallback) // картинка во время загрузки
@@ -177,7 +96,7 @@ public class FullScreenImageAdapter extends PagerAdapter{
 
 
 		//download and display image from url
-		imageLoader.displayImage(url, mImgDisplay, options);
+		imageLoader.displayImage(url, mImageContainer, options);
 	}
 
 	@Override

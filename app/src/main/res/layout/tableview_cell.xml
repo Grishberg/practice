@@ -12,9 +12,10 @@
                  android:layout_gravity="center" />
     <ImageView
         android:id="@+id/thumbnail"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="@dimen/news_cell_image_size"
+        android:layout_height="@dimen/news_cell_image_size"
         android:layout_gravity="center"
+        android:scaleType="center"
         android:visibility="gone"/>
     <!-- title -->
     <LinearLayout

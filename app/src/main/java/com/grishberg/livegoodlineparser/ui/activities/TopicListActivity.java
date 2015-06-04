@@ -9,9 +9,11 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import com.grishberg.livegoodlineparser.R;
+import com.grishberg.livegoodlineparser.data.interfaces.IGetTopilistListener;
 import com.grishberg.livegoodlineparser.ui.fragments.NewsActivityFragment;
 import com.grishberg.livegoodlineparser.ui.fragments.TopicListActivityFragment;
-import com.grishberg.livegoodlineparser.ui.listeners.ITopicItemClickListener;
+import com.grishberg.livegoodlineparser.ui.listeners.ITopicListActivityActions;
+import com.grishberg.livegoodlineparser.ui.listeners.ITopicListFragmentActions;
 import com.nostra13.universalimageloader.cache.memory.impl.WeakMemoryCache;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -22,11 +24,12 @@ import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
 import java.util.ArrayList;
 import java.util.List;
 
-
-public class TopicListActivity extends AppCompatActivity implements ITopicItemClickListener {
+// activity shows news topic list and detail news
+public class TopicListActivity extends AppCompatActivity implements ITopicListActivityActions {
 	public static final String TAG = "LiveGL.mainActivity";
 
-	TopicListActivityFragment mTopicListFragment;
+	private ArrayList<ITopicListFragmentActions> mFragments;
+	//TopicListActivityFragment mTopicListFragment;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -48,69 +51,79 @@ public class TopicListActivity extends AppCompatActivity implements ITopicItemCl
 		ImageLoader.getInstance().init(config);
 		// END - UNIVERSAL IMAGE LOADER SETUP
 
-		// создание фрагментов
+		mFragments	= new ArrayList<>();
+		// creating fragments
 		// получим экземпляр FragmentTransaction из нашей Activity
-		FragmentManager fragmentManager = getSupportFragmentManager();
-		FragmentTransaction fragmentTransaction = fragmentManager
+		TopicListActivityFragment topicListFragment = TopicListActivityFragment.newInstance();
+
+		FragmentTransaction transaction =  getSupportFragmentManager()
 				.beginTransaction();
 
-		// добавляем фрагмент
-		mTopicListFragment = TopicListActivityFragment.newInstance();
-		fragmentTransaction.replace(R.id.topic_list_fragment, mTopicListFragment
-				,TopicListActivityFragment.class.getName());
+		// add topic list fragment
 
-		// если в текущей разметке есть секция под новость, отображаем второй фрагмент
+		transaction.add(R.id.topic_list_fragment, topicListFragment
+				, TopicListActivityFragment.class.getName());
+
+		// if current layout file contains framelayout for detail news fragment, show news fragment
 		FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
 		if (newsLayout != null) {
-			// портретная ориентация планшета, нужно отобразить фрагмент с новостью в том же Layout
 			NewsActivityFragment newsFragment = new NewsActivityFragment();
-			fragmentTransaction.replace(newsLayout.getId(), newsFragment
+			transaction.replace(newsLayout.getId(), newsFragment
 					, NewsActivityFragment.class.getName());
 		}
-		fragmentTransaction.commit();
-
+		transaction.commit();
 	}
 
+	/**
+	 * send incoming Intent to child fragment
+	 * @param intent
+	 */
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
 		String action = intent.getAction();
-		if (action.equals(TopicListActivityFragment.COMMAND_UPDATE_FROM_SERVICE) ||
-				action.equals(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE)) {
-			if (mTopicListFragment != null) {
-				mTopicListFragment.onNewIntent(intent);
+		for (ITopicListFragmentActions listener: mFragments) {
+			if (action.equals(TopicListActivityFragment.COMMAND_UPDATE_FROM_SERVICE) ||
+					action.equals(TopicListActivityFragment.COMMAND_OPEN_NEWS_FROM_SERVICE)) {
+					listener.onNewIntent(intent);
 			}
 		}
 	}
 
+	/**
+	 * send onBackPressed action to child fragment
+	 */
 	@Override
 	public void onBackPressed() {
 		FragmentManager fragmentManager = getSupportFragmentManager();
-		// если отображается фрагмент со списком новостей, то отработать кнопку назад, закрыть приложение
+
+		// if topic list fragment are visible, do default action in back pressed
 		TopicListActivityFragment topicListActivityFragment =
 				(TopicListActivityFragment) fragmentManager.findFragmentByTag(TopicListActivityFragment.class.getName());
-		if (topicListActivityFragment != null) {
+		if (topicListActivityFragment.isVisible()) {
 			super.onBackPressed();
 
 		} else {
-			// если нет, то скрыть фрагмент со статьей и отобразить фрагмент со списком новостей
+			// otherwise - hide detail news fragment and show topic list fragment
 			NewsActivityFragment newsActivityFragment = (NewsActivityFragment) fragmentManager
 					.findFragmentByTag(NewsActivityFragment.class.getName());
 			if (newsActivityFragment != null) {
 				FragmentTransaction transaction = fragmentManager.beginTransaction()
-						.replace(R.id.topic_list_fragment, mTopicListFragment
-								,TopicListActivityFragment.class.getName());
+						.remove(newsActivityFragment);
+				transaction.show(topicListActivityFragment);
 				transaction.commit();
 			}
 		}
 	}
 
-	// реакция на нажатие новости в списке новостей
+	//action for click on topic list item
 	@Override
 	public void onTopicListItemClicked(String title, String url, long date) {
 		NewsActivityFragment newsActivityFragment = NewsActivityFragment.newInstance(title, url, date);
-		FragmentManager fragmentManager = getSupportFragmentManager();
-		FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+		FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+
+		TopicListActivityFragment topicListActivityFragment =
+				(TopicListActivityFragment) getSupportFragmentManager().findFragmentByTag(TopicListActivityFragment.class.getName());
 
 		// если в текущей разметке есть секция под новость, отображаем второй фрагмент
 		FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
@@ -120,9 +133,22 @@ public class TopicListActivity extends AppCompatActivity implements ITopicItemCl
 					, NewsActivityFragment.class.getName());
 		} else {
 			// заменить фрагмент со списком на фрагмент с новостью
-			fragmentTransaction.replace(R.id.topic_list_fragment, newsActivityFragment
-					,NewsActivityFragment.class.getName());
+			fragmentTransaction.hide(topicListActivityFragment);
+			fragmentTransaction.add(R.id.topic_list_fragment, newsActivityFragment
+					, NewsActivityFragment.class.getName());
 		}
 		fragmentTransaction.commit();
+	}
+
+	@Override
+	public void onRegister(ITopicListFragmentActions fragment) {
+		if(mFragments != null) {
+			mFragments.add(fragment);
+		}
+	}
+
+	@Override
+	public void onUnregister(ITopicListFragmentActions fragment) {
+		mFragments.remove(fragment);
 	}
 }

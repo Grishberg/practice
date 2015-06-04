@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Created by G on 29.05.15.
+ * Async loading next part of topic list
  */
 public class GetTopicListTask extends BaseAsynctaskLoader {
 	public static final String TAG = "LiveGL.TopicLoader";
@@ -124,11 +125,6 @@ public class GetTopicListTask extends BaseAsynctaskLoader {
 	@Override
 	public void setListener(Object listener) {
 		mListener = (IGetTopilistListener) listener;
-	}
-
-	@Override
-	public void releaseListener() {
-		mListener = null;
 	}
 
 	@Override

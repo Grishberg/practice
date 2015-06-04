@@ -17,11 +17,11 @@ import java.util.List;
 
 /**
  * Created by G on 26.05.15.
+ * listener for spanned child elements events
+ * handle click event on ImageSpan and UrlSpan
  */
 
-
 public class LinkMovementMethodExt extends LinkMovementMethod {
-	//private static LinkMovementMethod sInstance;
 	private Handler mHandler			= null;
 	private List<Class> mSpanClassList	= null;
 	public LinkMovementMethodExt(Handler handler, Class[] spanClassArray) {

@@ -42,10 +42,14 @@ public class NewsDbHelper extends SQLiteOpenHelper
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
 
+	/**
+	 *  creating database if not exists
+	 * @param db
+	 */
 	@Override
 	public void onCreate(SQLiteDatabase db)
 	{
-		// создаем таблицу для хранения кэша
+		// create tables for storing news
 		db.execSQL("create table "+NEWS_TABLE_NAME+" ("
 				+ "date			LONG PRIMARY KEY,"
 				+ "title		TEXT ,"
@@ -55,32 +59,40 @@ public class NewsDbHelper extends SQLiteOpenHelper
 				+ "isDescription	INTEGER"
 				+ ");");
 
-		// создаем таблицу для хранения картинок
-		// ключевым полем будет url картинки, так как
-		// не будет 2 разных картинки с 1 url и поиск ведется по url
+		// create table for storing refers to images on disk
+		// url is primary key because searching images provides by URL
 		db.execSQL("create table " + IMAGES_TABLE_NAME + " ("
-//					+ "id			INTEGER PRIMARY KEY autoincrement,"
 				+ "url			TEXT PRIMARY KEY,"
 				+ "path	TEXT"
 				+ ");");
 	}
 
+	/**
+	 * upgrade database if oldVersion not equals newVersion
+	 * @param db
+	 * @param oldVersion
+	 * @param newVersion
+	 */
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
 	{
 		Log.w("LOG_TAG", "Обновление базы данных с версии " + oldVersion
 				+ " до версии " + newVersion + ", которое удалит все старые данные");
-		// Удаляем предыдущую таблицу при апгрейде
+		// delete old tables
 		db.execSQL("DROP TABLE IF EXISTS "+ NEWS_TABLE_NAME);
 		db.execSQL("DROP TABLE IF EXISTS "+ IMAGES_TABLE_NAME);
-		// Создаём новый экземпляр таблицы
+
+		// create new tables
 		onCreate(db);
 	}
 	//----------------------------------------------------------------------
-	//------------- вспомогательные функции для работы с бд ----------------
+	//-------------helpers work methods----------------
 	//----------------------------------------------------------------------
 
-		// очистить базу данных
+	/**
+	 * clear data from tables
+	 * @return true
+	 */
 	public boolean clearDb()
 	{
 		SQLiteDatabase db = this.getWritableDatabase();
@@ -90,8 +102,11 @@ public class NewsDbHelper extends SQLiteOpenHelper
 		return true;
 	}
 
-	//TODO: перед вызовом проверить на null
-	// функция извлекает список новостей из кэша, либо из сети
+	/**
+	 * gets news topic list from DB
+	 * @param dt - date time from which need search other news elements in DB
+	 * @return list of news elements List<NewsContainer>
+	 */
 	public List<NewsContainer> getTopicList( long dt)
 	{
 		List<NewsContainer> news	= new ArrayList<NewsContainer>();
@@ -118,6 +133,12 @@ public class NewsDbHelper extends SQLiteOpenHelper
 	}
 
 	// функция извлекает страницу с новостью из кэша или из сети
+
+	/**
+	 * get news body for news with datetime dt in millisec from 1970
+	 * @param dt datetime in millisec from 1970
+	 * @return CachedNewsContainer
+	 */
 	public CachedNewsContainer getNewsPage(long dt)
 	{
 		CachedNewsContainer bodyContainer	= null;

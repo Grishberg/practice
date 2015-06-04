@@ -4,22 +4,18 @@ import android.content.Context;
 
 /**
  * Created by G on 29.05.15.
+ * async task for clearing cache
  */
 public class ClearCacheTask extends BaseAsynctaskLoader {
 	public ClearCacheTask(Context context) {
 		super(context);
 
-		// прочитать параметры из bundle
 	}
 
 	@Override
 	public Object loadInBackground() {
 		mDbHelper.clearDb();
 		return null;
-	}
-
-	@Override
-	public void releaseListener() {
 	}
 
 	@Override

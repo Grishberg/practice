@@ -120,12 +120,6 @@ public class GetNewsTask extends BaseAsynctaskLoader
 	}
 
 	@Override
-	public void releaseListener()
-	{
-		mListener	= null;
-	}
-
-	@Override
 	protected void onStopLoading()
 	{
 		super.onStopLoading();

@@ -1,5 +1,6 @@
 package com.grishberg.livegoodlineparser.ui.fragments;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -20,10 +21,15 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.style.ImageSpan;
 import android.text.style.URLSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +38,7 @@ import com.grishberg.livegoodlineparser.R;
 import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetNewsTask;
 import com.grishberg.livegoodlineparser.data.containers.NewsBodyContainer;
 import com.grishberg.livegoodlineparser.data.interfaces.IGetNewsListener;
+import com.grishberg.livegoodlineparser.data.model.MyTagHandler;
 import com.grishberg.livegoodlineparser.ui.listeners.LinkMovementMethodExt;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
@@ -95,9 +102,7 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 							 Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_news, container, false);
 
-		String newsUrl = "";
 		String newsTitle = "";
-		Long date = 0L;
 		Bundle args = getArguments();
 
 		mFirstRun = true;
@@ -113,7 +118,6 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 		}
 		mTvTitle = (TextView) view.findViewById(R.id.tvNewsFragmentTitle);
 		mTvNewsBody = (TextView) view.findViewById(R.id.tvNewsFragmentBody);
-
 		mImageLoader = ImageLoader.getInstance();
 
 		mTvTitle.setText(newsTitle);
@@ -138,11 +142,6 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 
 		mTvNewsBody.setMovementMethod(new LinkMovementMethodExt(mOnSpannClickHandler
 				, new Class[]{ImageSpan.class, URLSpan.class}));
-
-//		progressDlg = new ProgressDialog(getActivity());
-//		progressDlg.setTitle("Ожидание");
-//		progressDlg.setMessage("Идет загрузка новости...");
-//		progressDlg.show();
 
 		mImageUrlList = new ArrayList<String>();
 		return view;
@@ -240,7 +239,7 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 
 							return d;
 						}
-					}, null);
+					}, new MyTagHandler());
 
 			mTvNewsBody.setText(spanned);
 		} catch (Exception ex) {
@@ -283,14 +282,10 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 	}
 
 	private void hideProgress() {
-		// отключаем прогрессбар
-		//progressDlg.dismiss();
 	}
 
 	private void showProgress() {
-		//progressDlg.show();
 	}
-
 
 	//---- inner class фоновой загрузки изображений--------------------------
 	class ImageGetterAsyncTask extends AsyncTask<TextView, Void, Bitmap> {
@@ -310,10 +305,6 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 			t = params[0];
 			try {
 				Bitmap bmp = mImageLoader.loadImageSync(source);
-				//bmp = Picasso.with(context).load(source)
-				//		.transform(new BitmapTransform(MAX_WIDTH, MAX_HEIGHT))
-				//		.resize(mSize, mSize).centerInside()
-				//		.get();
 				return bmp;
 			} catch (Exception e) {
 				return null;
@@ -325,11 +316,10 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 			try {
 				Drawable d = new BitmapDrawable(getResources(), bitmap);
 				Point size = new Point();
-				getActivity().getWindowManager().getDefaultDisplay().getSize(size);
 				// вычисление коэфициента, для пропорционального изменения размера фотографий
-				float multiplier = (float) size.x / (float) bitmap.getWidth();
-				int newWidth = (int) (bitmap.getWidth() * multiplier);
-				int newHeight = (int) (bitmap.getHeight() * multiplier);
+				float multiplier	= mTvNewsBody.getMeasuredWidth() / (float) bitmap.getWidth();
+				int newWidth		= (int) (bitmap.getWidth() * multiplier);
+				int newHeight		= (int) (bitmap.getHeight() * multiplier);
 
 				levelListDrawable.addLevel(1, 1, d);
 				// Set bounds width  and height according to the bitmap resized size
