@@ -73,18 +73,21 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 			}
 			transaction.commit();
 		} else {
-			//TODO: if orientation changed restore showing detail news state
+			//if orientation changed restore showing detail news state
+			boolean detailNewsState	= savedInstanceState.getBoolean(SAVE_STATE_DETAILS_NEW);
 			mTopicListFragment	=  (TopicListActivityFragment) getSupportFragmentManager()
 					.findFragmentByTag(TopicListActivityFragment.class.getName());
-			getSupportFragmentManager().beginTransaction()
-					.hide(mTopicListFragment)
-					.commit();
+			if(detailNewsState) {
+				getSupportFragmentManager().beginTransaction()
+						.hide(mTopicListFragment)
+						.commit();
+			}
 		}
 	}
 
 	@Override
-	public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
-		super.onSaveInstanceState(outState, outPersistentState);
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
 		outState.putBoolean(SAVE_STATE_DETAILS_NEW, mTopicListFragment.isVisible() == false);
 	}
 

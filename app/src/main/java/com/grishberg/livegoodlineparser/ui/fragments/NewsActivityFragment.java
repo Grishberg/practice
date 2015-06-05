@@ -108,6 +108,8 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 		mFirstRun = true;
 		if (savedInstanceState != null) {
 			mFirstRun = false;
+		} else {
+			//TODO: save newss body
 		}
 		if (args != null) {
 			// извлекаем параметры

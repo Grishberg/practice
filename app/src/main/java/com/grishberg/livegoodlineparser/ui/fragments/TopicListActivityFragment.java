@@ -123,26 +123,6 @@ public class TopicListActivityFragment extends Fragment implements
 	}
 
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		Log.d(TAG, "onCreate");
-	}
-
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-
-		Log.d(TAG, "onDestroy");
-	}
-
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		Log.d(TAG, "onActivityCreated");
-
-	}
-
-	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_topic_list, container, false);
