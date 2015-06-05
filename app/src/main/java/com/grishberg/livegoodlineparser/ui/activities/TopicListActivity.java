@@ -2,6 +2,7 @@ package com.grishberg.livegoodlineparser.ui.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
@@ -28,7 +29,7 @@ import java.util.List;
 // activity shows news topic list and detail news
 public class TopicListActivity extends AppCompatActivity implements ITopicListActivityActions {
 	public static final String TAG = "LiveGL.mainActivity";
-
+	public static final String SAVE_STATE_DETAILS_NEW	= "saveStateDetailNews";
 	private ArrayList<ITopicListFragmentActions> mFragments;
 	TopicListActivityFragment mTopicListFragment;
 
@@ -58,15 +59,11 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 		// получим экземпляр FragmentTransaction из нашей Activity
 		if(savedInstanceState == null) {
 			mTopicListFragment = TopicListActivityFragment.newInstance();
-
 			FragmentTransaction transaction = getSupportFragmentManager()
 					.beginTransaction();
-
 			// add topic list fragment
-
 			transaction.add(R.id.topic_list_fragment, mTopicListFragment
 					, TopicListActivityFragment.class.getName());
-
 			// if current layout file contains framelayout for detail news fragment, show news fragment
 			FrameLayout newsLayout = (FrameLayout) findViewById(R.id.news_fragment);
 			if (newsLayout != null) {
@@ -76,15 +73,19 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 			}
 			transaction.commit();
 		} else {
+			//TODO: if orientation changed restore showing detail news state
 			mTopicListFragment	=  (TopicListActivityFragment) getSupportFragmentManager()
 					.findFragmentByTag(TopicListActivityFragment.class.getName());
+			getSupportFragmentManager().beginTransaction()
+					.hide(mTopicListFragment)
+					.commit();
 		}
 	}
 
 	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		Log.d(TAG, "onDestroy");
+	public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+		super.onSaveInstanceState(outState, outPersistentState);
+		outState.putBoolean(SAVE_STATE_DETAILS_NEW, mTopicListFragment.isVisible() == false);
 	}
 
 	/**
@@ -111,8 +112,6 @@ public class TopicListActivity extends AppCompatActivity implements ITopicListAc
 		FragmentManager fragmentManager = getSupportFragmentManager();
 
 		// if topic list fragment are visible, do default action in back pressed
-		//TopicListActivityFragment topicListActivityFragment =
-		//		(TopicListActivityFragment) fragmentManager.findFragmentByTag(TopicListActivityFragment.class.getName());
 		if (mTopicListFragment.isVisible()) {
 			super.onBackPressed();
 
