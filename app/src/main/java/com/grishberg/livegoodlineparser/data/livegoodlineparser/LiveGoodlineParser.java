@@ -91,8 +91,7 @@ public class LiveGoodlineParser
             Element wr          = container.getElementById("wrapper");
             Element cont        = wr.getElementById("content");
             Element newsBlock   = cont.getElementsByClass("topic-content").first();
-            //String articleBody  = newsBlock.text();
-            String articleBody  = newsBlock.html().replace("<img ","<img align=\"center\" ");
+            String articleBody  = newsBlock.html();
 
             result = articleBody;
         } catch (Exception e)

@@ -77,7 +77,7 @@ public class TopicListActivityFragment extends Fragment implements
 
 	// слушатель реакции на выбор новости из списка
 	private ITopicListActivityActions mListener;
-	private ProgressDialog mProgressDlg;
+	//private ProgressDialog mProgressDlg;
 
 	private ListView mNews;
 	private ProgressBar mProgressBar;
@@ -146,9 +146,10 @@ public class TopicListActivityFragment extends Fragment implements
 			mElements			= savedInstanceState.getParcelableArrayList(SAVE_STATE_TOPIC_LIST);
 			mTopElementOffset	= savedInstanceState.getInt(SAVE_STATE_TOP_ELEMENT_INDEX);
 			mCurrentPage		= savedInstanceState.getInt(SAVE_STATE_PAGE);
+			mNews.setSelection(mTopElementOffset);
 			mProgressBar.setVisibility(View.GONE);
 		} else {
-			mFirstRun = true;
+			getPageContent(1, false);
 			// скрыть список новостей
 			mSwipeRefreshLayout.setVisibility(View.GONE);
 		}
@@ -171,10 +172,6 @@ public class TopicListActivityFragment extends Fragment implements
 		// настройка анимации перехода
 		mShortAnimationDuration = getResources().getInteger(
 				android.R.integer.config_shortAnimTime);
-
-		mProgressDlg = new ProgressDialog(getActivity());
-		mProgressDlg.setTitle("Ожидание");
-		mProgressDlg.setMessage("Идет обновление новостей...");
 
 		mAlarmReceiver = new AlarmReceiver();
 
@@ -217,20 +214,13 @@ public class TopicListActivityFragment extends Fragment implements
 		}
 	}
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		if (mFirstRun) {
-			mFirstRun = false;
-			// фоновая загрузка первой страницы
-			getPageContent(1, false);
-		} else {
-			// восстановление при повороте экрана
-			mNews.setSelection(mTopElementOffset);
-		}
-	}
-
-	// реакция на нажатие на элемент списка
+	/**
+	 * event when user clicks on news topic list element
+	 * @param parent
+	 * @param view
+	 * @param position
+	 * @param id
+	 */
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		NewsContainer currentNews = (NewsContainer) mAdapter.getItem(position);
@@ -238,15 +228,23 @@ public class TopicListActivityFragment extends Fragment implements
 				, currentNews.getDate());
 	}
 
-	public void onStartAlarm() {
+	/**
+	 * start automatic news checking
+	 */
+	private void onStartAlarm() {
 		mAlarmReceiver.startTask(getActivity(), TopicListActivityFragment.UPDATE_NEWS_DURATION);
 	}
 
-	public void onStopAlarm() {
+	/**
+	 * stop automatic news checking
+	 */
+	private void onStopAlarm() {
 		mAlarmReceiver.cancelAlarm(getActivity());
 	}
 
-	//VIEW скрытие прогрессбара и отображение списка
+	/**
+	 * hide progress bar and show list view
+	 */
 	private void hideProgressBar() {
 		mSwipeRefreshLayout.setAlpha(0f);
 		mSwipeRefreshLayout.setVisibility(View.VISIBLE);
@@ -275,10 +273,6 @@ public class TopicListActivityFragment extends Fragment implements
 
 		Log.d(TAG, "on get page, page = " + page + ", insertToTop = " + insertToTop);
 
-		// если обновление новостей - отобразить прогресс
-		if (insertToTop) {
-			mProgressDlg.show();
-		}
 		// время последнего элемента
 		long lastTopicListDate = new Date().getTime();
 		if (insertToTop) {
@@ -298,7 +292,10 @@ public class TopicListActivityFragment extends Fragment implements
 		Loader loader = getLoaderManager().restartLoader(TASK_ID_GET_TOPIC_LIST, params, this);
 	}
 
-	//---------------- обработка фоновой задачи --------------
+	/**
+	 * on received data from cache
+	 * @param progressResult
+	 */
 	@Override
 	public void onProgress(TopicListContainer progressResult) {
 		mDownloadingPage = false;
@@ -348,22 +345,24 @@ public class TopicListActivityFragment extends Fragment implements
 		} else {
 			doAfterTopicListReceived(result.getNewsList(), result.isInsertToTop(), result.getPage(), false);
 		}
-		mProgressDlg.dismiss();
 	}
 
 	@Override
 	public void onLoaderReset(Loader loader) {
 
 	}
-	//------------------------------------------------------
 
+	/**
+	 * add received news items to news topic list view
+	 * @param topicList
+	 * @param insertToTop
+	 * @param page
+	 * @param fromCache
+	 */
 	private void doAfterTopicListReceived(List<NewsContainer> topicList
 			, boolean insertToTop, int page, boolean fromCache) {
 
 		boolean dataChanged = false;
-		if (insertToTop) {
-			mProgressDlg.dismiss();
-		}
 		if (mElements.size() == 0) {
 			hideProgressBar();
 		}
@@ -389,8 +388,7 @@ public class TopicListActivityFragment extends Fragment implements
 			}
 			mSwipeRefreshLayout.setRefreshing(false);
 		} else {
-			// добавление в конец списка новостей
-
+			// add items to end of list
 			if (topicList.size() > 0) {
 				//--------------------------------------------
 				// нужно проверить, есть ли такие новости уже в списке, если есть - заменить
@@ -415,19 +413,16 @@ public class TopicListActivityFragment extends Fragment implements
 				dataChanged = true;
 			}
 		}
-		// если были изменения в данных - обновить ListView
+		// if was change - update ListView
 		if (dataChanged) {
 			mCurrentPage	= page;
 			mAdapter.notifyDataSetChanged();
 		}
-		// отключаем прогрессбар
-		mProgressDlg.dismiss();
 	}
 
-	//----- событие при pull down to refresh
+	//----- event on pull down to refresh
 	@Override
 	public void onRefresh() {
-		// начинаем показывать прогресс
 		if (mDownloadingPage == false) {
 			mSwipeRefreshLayout.setRefreshing(true);
 			getPageContent(1, true);
@@ -436,7 +431,7 @@ public class TopicListActivityFragment extends Fragment implements
 		}
 	}
 
-	//------------- функции отображения меню -----------------
+	//------------- menu functions -----------------
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		inflater.inflate(R.menu.menu_topic_list, menu);
@@ -464,14 +459,13 @@ public class TopicListActivityFragment extends Fragment implements
 			case R.id.action_stop_alarm:
 				onStopAlarm();
 				return true;
-
 		}
-
 		return super.onOptionsItemSelected(item);
 	}
 
 	@Override
 	public void onCacheCleared() {
-		Toast.makeText(getActivity(), "Кэш очищен.", Toast.LENGTH_SHORT).show();
+		Toast.makeText(getActivity(), getString(R.string.topiclist_activity_cache_cleared)
+				, Toast.LENGTH_SHORT).show();
 	}
 }

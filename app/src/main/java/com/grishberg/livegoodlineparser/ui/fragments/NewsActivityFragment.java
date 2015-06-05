@@ -5,8 +5,10 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
@@ -27,9 +29,12 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.Scroller;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +44,7 @@ import com.grishberg.livegoodlineparser.data.asynctaskloaders.GetNewsTask;
 import com.grishberg.livegoodlineparser.data.containers.NewsBodyContainer;
 import com.grishberg.livegoodlineparser.data.interfaces.IGetNewsListener;
 import com.grishberg.livegoodlineparser.data.model.MyTagHandler;
+import com.grishberg.livegoodlineparser.ui.bitmaputils.ImageGetterAsyncTask;
 import com.grishberg.livegoodlineparser.ui.listeners.LinkMovementMethodExt;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
@@ -59,24 +65,23 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 	public static final String PARAM_TITLE = "paramTitle";
 	public static final String PARAM_DATE = "paramDate";
 	public static final String PARAM_URL = "paramUrl";
+	public static final String RESTORE_NEWS_BODY 			= "restoreNewsBody";
+	public static final String RESTORE_NEWS_SCROLL_OFFSET	= "restoreNewsOffset";
+	public static final String RESTORE_NEWS_TITLE			= "restoreNewsTitle";
 
 
 	private HashMap<String, Drawable> imageCache = new HashMap<String, Drawable>();
 
 	private TextView mTvTitle;
 	private TextView mTvNewsBody;
-	//private ProgressDialog progressDlg;
-	private static final int MAX_WIDTH = 1024;
-	private static final int MAX_HEIGHT = 768;
-	private final int mSize = (int) Math.ceil(Math.sqrt(MAX_WIDTH * MAX_HEIGHT));
-	private String mUrl;
+	private ScrollView mScrollView;
 	private long mDate;
 	private ArrayList<String> mImageUrlList;
-	private boolean mFirstRun;
-	private boolean mIsNeedGetNews;
-	// загрузчик новостей
+	private String	mNewsBody;
+	private String	mNewsTitle;
+	private int		mNewsImagesWidth;
+	private int		mNewsImagesHeight;
 	private Handler mOnSpannClickHandler;
-	private ImageLoader mImageLoader;
 
 	public static NewsActivityFragment newInstance(String newsTitle, String url, long date) {
 		NewsActivityFragment instance = new NewsActivityFragment();
@@ -102,27 +107,22 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 							 Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_news, container, false);
 
-		String newsTitle = "";
+		mNewsBody	= "";
+		mNewsTitle	= "";
 		Bundle args = getArguments();
+		String url	= "";
 
-		mFirstRun = true;
-		if (savedInstanceState != null) {
-			mFirstRun = false;
-		} else {
-			//TODO: save newss body
-		}
 		if (args != null) {
 			// извлекаем параметры
-			newsTitle = args.getString(PARAM_TITLE);
-			mUrl = args.getString(PARAM_URL);
-			mDate = args.getLong(PARAM_DATE, 0);
-			mIsNeedGetNews = true;
+			mNewsTitle	= args.getString(PARAM_TITLE);
+			url		= args.getString(PARAM_URL);
+			mDate		= args.getLong(PARAM_DATE, 0);
 		}
 		mTvTitle = (TextView) view.findViewById(R.id.tvNewsFragmentTitle);
 		mTvNewsBody = (TextView) view.findViewById(R.id.tvNewsFragmentBody);
-		mImageLoader = ImageLoader.getInstance();
+		mScrollView	= (ScrollView) view.findViewById(R.id.news_fragment_scroll);
 
-		mTvTitle.setText(newsTitle);
+		mTvTitle.setText(mNewsTitle);
 		mTvNewsBody.setText(""); // для удобства настройки расположения элемента
 
 		// событие при клике на ссылку или изображение в статье
@@ -146,25 +146,71 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 				, new Class[]{ImageSpan.class, URLSpan.class}));
 
 		mImageUrlList = new ArrayList<String>();
+
+		initiliazeNewsBodyData(savedInstanceState, url);
+
 		return view;
 	}
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		if (mIsNeedGetNews) {
-			if (mFirstRun) {
-				mFirstRun = false;
-				getPageContent(mUrl, mDate);
-			} else {
-				// восстановление при повороте экрана
-				//Loader loader = getLoaderManager().initLoader(TASK_ID_GET_NEWS_BODY, null, this);
-				//((GetNewsTask) loader).setListener(this);
+	/**
+	 * initialize news body according to restoring after change screen orientation
+	 * @param savedInstanceState save state bundle
+	 * @param url news url
+	 */
+	private void initiliazeNewsBodyData(Bundle savedInstanceState, String url) {
+		// restore news body
+		if (savedInstanceState != null) {
+			mNewsBody	= savedInstanceState.getString(RESTORE_NEWS_BODY);
+			mNewsTitle	= savedInstanceState.getString(RESTORE_NEWS_TITLE);
+			mTvTitle.setText(mNewsTitle);
+			// get textView size when it draws on screen
+			mTvNewsBody.post(new Runnable() {
+				@Override
+				public void run() {
+					mNewsImagesHeight	= mScrollView.getMeasuredHeight();
+					mNewsImagesWidth = mTvNewsBody.getMeasuredWidth();
+					doAfterNewsBodyReceived(mNewsBody, false, mNewsImagesWidth, mNewsImagesHeight);
+				}
+			});
+
+			final int newsTopOffset	= savedInstanceState.getInt(RESTORE_NEWS_SCROLL_OFFSET);
+			if(newsTopOffset > 0)
+				mScrollView.post(new Runnable() {
+					public void run() {
+						mScrollView.scrollTo(0, newsTopOffset);
+					}
+				});
+		} else {
+			if(url.length() > 0) {
+				// get textView size when it draws on screen
+				mTvNewsBody.post(new Runnable() {
+					@Override
+					public void run() {
+						mNewsImagesHeight	= mScrollView.getMeasuredHeight();
+						mNewsImagesWidth = mTvNewsBody.getMeasuredWidth();
+					}
+				});
+				getPageContent(url, mDate);
 			}
 		}
 	}
 
-	//------------------- процедура фоновой загрузки страницы -------------------------
+	/**
+	 * save news body state
+	 * @param outState
+	 */
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString(RESTORE_NEWS_BODY, mNewsBody);
+		outState.putString(RESTORE_NEWS_TITLE, mNewsTitle);
+	}
+
+	/**
+	 * create download news body task
+	 * @param url
+	 * @param date
+	 */
 	private void getPageContent(String url, long date) {
 		Bundle bundle = new Bundle();
 		bundle.putString(GetNewsTask.PARAM_URL, url);
@@ -173,26 +219,34 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 		getLoaderManager().restartLoader(TASK_ID_GET_NEWS_BODY, bundle, this);
 	}
 
-	//----------- результаты выполнения асинхронных методов
+	/**
+	 * event when get news task returns result
+	 * @param loader reference to task
+	 * @param data	NewsBodyContainer result
+	 */
 	@Override
 	public void onLoadFinished(Loader loader, Object data) {
 		hideProgress();
 		NewsBodyContainer result = (NewsBodyContainer) data;
 		if (result.getErrorCode() < 0) {
-			// ошибка
+			// some error
 		} else {
-			doAfterNewsBodyReceived(result.getNews(), false);
+			mNewsBody	= result.getNews();
+			doAfterNewsBodyReceived(result.getNews(), false, mNewsImagesWidth, mNewsImagesHeight);
 		}
 	}
 
+	/**
+	 * event when get news task update progress ( returns some data from cache)
+	 * @param progressResult NewsBodyContainer result
+	 */
 	@Override
 	public void onProgress(NewsBodyContainer progressResult) {
 		if (progressResult.getErrorCode() < 0) {
-			// ошибка
+			// some error
 		} else {
-			doAfterNewsBodyReceived(progressResult.getNews(), true);
+			doAfterNewsBodyReceived(progressResult.getNews(), true, mNewsImagesWidth, mNewsImagesHeight);
 		}
-
 	}
 
 	@Override
@@ -215,30 +269,42 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 
 	}
 
-	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache) {
+	/**
+	 * convert news body text into spanned elements and assign to textView
+	 * @param newsBody news body text
+	 * @param fromCache flag shows that data was received from cache
+	 */
+	private void doAfterNewsBodyReceived(String newsBody, boolean fromCache
+			,final int imagesWidth
+			,final int imagesHeight) {
 		try {
 			// в тело textView помещается тело статьи, асинхронно подгружаются картинки с сохранением в кэш
-			if (fromCache == false) {
+			if (!fromCache) {
 				hideProgress();
 			}
 			if (newsBody == null) {
 				return;
 			}
+			final Resources resources	=  getResources();
 			mImageUrlList = new ArrayList<String>();
+
 			Spanned spanned = Html.fromHtml(newsBody,
 					new Html.ImageGetter() {
+						// called for each image-url
 						@Override
-						public Drawable getDrawable(String source) // вызывается для загрузки изображений
+						public Drawable getDrawable(String source)
 						{
-							// заполнить массив ссылок на изображения
+							// fill images url- array for showing in gallery
 							mImageUrlList.add(source);
+
 							LevelListDrawable d = new LevelListDrawable();
-							Drawable empty = getResources().getDrawable(R.drawable.abc_btn_check_material);
+							Drawable empty = resources.getDrawable(R.drawable.abc_btn_check_material);
 							;
 							d.addLevel(0, 0, empty);
 							d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
-							new ImageGetterAsyncTask(getActivity(), source, d).execute(mTvNewsBody);
-
+							new ImageGetterAsyncTask(getActivity(),resources, source, d
+									,imagesWidth, imagesHeight)
+									.execute(mTvNewsBody);
 							return d;
 						}
 					}, new MyTagHandler());
@@ -250,18 +316,25 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 		}
 	}
 
-	// событие вызывается при клике на ссылку
+	/**
+	 * event when user click on image
+	 * @param url
+	 * @return
+	 */
 	private boolean onUrlClick(String url) {
 		Log.d(TAG, "onUrlClick url = " + url);
 		return false;
 	}
 
-	// событие вызывается при клике на картинку
+	/** even when user click on image in news
+	 *
+	 * @param imageSourceUrl
+	 * @return
+	 */
 	private boolean onImageClick(String imageSourceUrl) {
 
 		for (int imageIndex = 0; imageIndex < mImageUrlList.size(); imageIndex++) {
 			if (mImageUrlList.get(imageIndex).equals(imageSourceUrl)) {
-				// найден индекс изображения в массиве, передать в активити
 				showImagesGallery(imageIndex, mImageUrlList);
 				Log.d(TAG, "onImageClick imageIndex = " + imageIndex);
 				return true;
@@ -270,66 +343,22 @@ public class NewsActivityFragment extends Fragment implements LoaderManager.Load
 		return false;
 	}
 
-	// отобразить полноэкранный просмотр галереи
+	/**
+	 * call gallery activity
+	 * @param imageIndex
+	 * @param imageUrlList
+	 */
 	private void showImagesGallery(int imageIndex, ArrayList<String> imageUrlList) {
-		// launch full screen activity
 		Intent intent = new Intent(getActivity(), ActivityImageGallery.class);
 		intent.putExtra(ActivityImageGallery.INTENT_POSITION, imageIndex);
 		intent.putExtra(ActivityImageGallery.INTENT_URL_ARRAY, imageUrlList);
-		try {
-			getActivity().startActivity(intent);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		getActivity().startActivity(intent);
 	}
 
+	// TODO: show progress after news body
 	private void hideProgress() {
 	}
 
 	private void showProgress() {
-	}
-
-	//---- inner class фоновой загрузки изображений--------------------------
-	class ImageGetterAsyncTask extends AsyncTask<TextView, Void, Bitmap> {
-		private LevelListDrawable levelListDrawable;
-		private Context context;
-		private String source;
-		private TextView t;
-
-		public ImageGetterAsyncTask(Context context, String source, LevelListDrawable levelListDrawable) {
-			this.context = context;
-			this.source = source;
-			this.levelListDrawable = levelListDrawable;
-		}
-
-		@Override
-		protected Bitmap doInBackground(TextView... params) {
-			t = params[0];
-			try {
-				Bitmap bmp = mImageLoader.loadImageSync(source);
-				return bmp;
-			} catch (Exception e) {
-				return null;
-			}
-		}
-
-		@Override
-		protected void onPostExecute(final Bitmap bitmap) {
-			try {
-				Drawable d = new BitmapDrawable(getResources(), bitmap);
-				Point size = new Point();
-				// вычисление коэфициента, для пропорционального изменения размера фотографий
-				float multiplier	= mTvNewsBody.getMeasuredWidth() / (float) bitmap.getWidth();
-				int newWidth		= (int) (bitmap.getWidth() * multiplier);
-				int newHeight		= (int) (bitmap.getHeight() * multiplier);
-
-				levelListDrawable.addLevel(1, 1, d);
-				// Set bounds width  and height according to the bitmap resized size
-				levelListDrawable.setBounds(0, 0, newWidth, newHeight);
-
-				levelListDrawable.setLevel(1);
-				t.setText(t.getText()); // invalidate() doesn't work correctly...
-			} catch (Exception e) { /* Like a null bitmap, etc. */ }
-		}
 	}
 }

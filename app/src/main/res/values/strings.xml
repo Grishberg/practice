@@ -12,5 +12,7 @@
     <string name="title_activity_topic_list">БорДа!</string>
     <string name="title_activity_image_gallery">Просмотр</string>
     <string name="action_settings">Settings</string>
+    <string name="topiclist_activity_cache_cleared">Кэш очищен.</string>
+
 
 </resources>
